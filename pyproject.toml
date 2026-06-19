@@ -26,3 +26,8 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "cli: CLI render/preview tests",
+  "web_local: E2E against locally served web/dist",
+  "web_docker: E2E against docker compose web app",
+]

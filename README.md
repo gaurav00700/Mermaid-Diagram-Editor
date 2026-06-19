@@ -127,3 +127,43 @@ npm run build
 ```
 
 Static output is written to `web/dist/`.
+
+## Testing
+
+Install dev dependencies and Playwright once:
+
+```bash
+uv sync
+uv run playwright install chromium
+cd web && npm ci && npm run build
+```
+
+Run the full suite:
+
+```bash
+uv run pytest tests/ -v
+```
+
+Run each mode separately:
+
+```bash
+uv run pytest tests/ -m cli -v          # CLI render/preview validation
+uv run pytest tests/ -m web_local -v    # E2E against locally served web/dist
+uv run pytest tests/ -m web_docker -v   # E2E against docker compose (requires Docker)
+```
+
+| Suite | Marker | What it covers |
+|-------|--------|----------------|
+| CLI | `cli` | PNG/SVG render, themes, backgrounds, DPI, scale, error handling |
+| Local web | `web_local` | Editor, preview, upload, zoom, background, export dialog |
+| Container | `web_docker` | `docker compose up --build` + same E2E on `localhost:8080` |
+
+## CI
+
+GitHub Actions runs three parallel jobs on every pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+
+- **CLI tests** — `pytest -m cli`
+- **Local web tests** — `pytest -m web_local`
+- **Container web tests** — `pytest -m web_docker`
+
+When all jobs pass, a comment is posted on the pull request summarizing the results. Failed runs do not post a success comment.
