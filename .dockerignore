@@ -1,0 +1,12 @@
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+dist
+node_modules
+web/node_modules
+web/dist
+*.md
+!README.md
+.DS_Store

@@ -1,0 +1,28 @@
+[project]
+name = "mermaid-diagram"
+version = "0.1.0"
+description = "Mermaid diagram editor web app and CLI for PNG/SVG export"
+readme = "README.md"
+authors = [
+    { name = "Gaurav", email = "gaurav.sharma@lecturio.de" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "playwright>=1.60.0",
+    "typer>=0.26.7",
+]
+
+[project.scripts]
+mermaid-diagram = "mermaid_diagram.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.16,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

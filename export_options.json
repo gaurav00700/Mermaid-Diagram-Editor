@@ -1,0 +1,7 @@
+{
+  "themes": ["default", "dark", "forest", "neutral"],
+  "dpiPresets": [72, 96, 150, 300],
+  "defaultDpi": 96,
+  "defaultTheme": "default",
+  "defaultBackground": "transparent"
+}

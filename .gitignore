@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info
+.venv/
+.pytest_cache/
+build/
+dist/
+wheels/
+
+# Node / web build
+node_modules/
+web/node_modules/
+web/dist/
+
+# Local exports and generated artifacts
+diagram.png
+diagram.svg
+/out/
+/tmp/
+
+# Environment and secrets
+.env
+.env.*
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
