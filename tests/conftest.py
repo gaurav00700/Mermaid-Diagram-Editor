@@ -163,14 +163,18 @@ def assert_preview_renders_sample_diagram(page: Page, base_url: str) -> None:
     page.wait_for_selector(".preview-svg svg", timeout=15000)
 
 
+def _set_monaco_content(page: Page, content: str) -> None:
+    page.locator(".monaco-editor").click()
+    page.keyboard.press("ControlOrMeta+A")
+    page.keyboard.press("Backspace")
+    page.keyboard.type(content)
+
+
 def assert_live_edit_updates_preview(page: Page, base_url: str) -> None:
     page.goto(base_url, wait_until="networkidle")
     page.wait_for_selector(".preview-svg svg", timeout=15000)
-    page.locator(".monaco-editor").click()
-    page.keyboard.press("Meta+A")
-    page.keyboard.type("graph LR\n    Live[Works] --> OK[Docker]\n")
-    page.wait_for_timeout(600)
-    page.locator(".preview-svg").get_by_text("Works", exact=True).wait_for(timeout=10000)
+    _set_monaco_content(page, "graph LR\n    Live[Works] --> OK[Docker]\n")
+    page.locator(".preview-svg").get_by_text("Works", exact=True).wait_for(timeout=15000)
 
 
 def assert_upload_replaces_editor_content(page: Page, base_url: str, tmp_path: Path) -> None:
@@ -186,13 +190,10 @@ def assert_upload_replaces_editor_content(page: Page, base_url: str, tmp_path: P
 def assert_reset_restores_sample_diagram(page: Page, base_url: str) -> None:
     page.goto(base_url, wait_until="networkidle")
     page.wait_for_selector(".preview-svg svg", timeout=15000)
-    page.locator(".monaco-editor").click()
-    page.keyboard.press("Meta+A")
-    page.keyboard.type("graph LR\n    Temp[Changed] --> End[Here]\n")
-    page.wait_for_timeout(600)
+    _set_monaco_content(page, "graph LR\n    Temp[Changed] --> End[Here]\n")
+    page.locator(".preview-svg").get_by_text("Changed", exact=True).wait_for(timeout=15000)
     page.get_by_role("button", name="Reset", exact=True).click()
-    page.wait_for_timeout(600)
-    page.locator(".preview-svg").get_by_text("Start", exact=True).wait_for(timeout=10000)
+    page.locator(".preview-svg").get_by_text("Start", exact=True).wait_for(timeout=15000)
 
 
 def assert_zoom_controls_visible(page: Page, base_url: str) -> None:
