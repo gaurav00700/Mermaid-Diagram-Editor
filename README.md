@@ -4,8 +4,9 @@ A split-pane Mermaid editor with live preview, browser export (PNG/SVG), a Pytho
 
 ## Features
 
-- Monaco editor with live Mermaid preview
+- Monaco editor with live preview
 - Upload `.mmd`, `.txt`, or `.md` files from your computer
+- Preview background: transparent (checkerboard), white, or custom hex
 - Export PNG or SVG with custom DPI, background, and theme
 - Persist editor content in `localStorage`
 - CLI for headless batch rendering
@@ -48,6 +49,9 @@ uv run mermaid-diagram render -i examples/sample.mmd -o diagram.png --dpi 300
 # Render to SVG with theme and background
 uv run mermaid-diagram render -i examples/sample.mmd -o diagram.svg -f svg --theme dark --background white
 
+# Open an interactive browser preview with background
+uv run mermaid-diagram preview -i examples/sample.mmd --background white --theme dark
+
 # Optional editable install
 uv tool install -e .
 mermaid-diagram render -i examples/sample.mmd -o out.png
@@ -64,6 +68,16 @@ mermaid-diagram render -i examples/sample.mmd -o out.png
 | `-b, --background` | `transparent`, `white`, or `#hex` |
 | `-t, --theme` | Mermaid theme: `default`, `dark`, `forest`, `neutral` |
 | `-s, --scale` | Extra scale multiplier |
+
+### CLI preview
+
+| Flag | Description |
+|------|-------------|
+| `-i, --input` | Input `.mmd`, `.txt`, or `.md` file (required) |
+| `-b, --background` | Preview background: `transparent`, `white`, or `#hex` |
+| `-t, --theme` | Mermaid theme |
+
+Close the browser window to exit preview mode.
 
 ## Docker serve
 
@@ -90,7 +104,7 @@ docker run -p 8080:80 mermaid-diagram:latest
 
 ## Shared export settings
 
-Themes, DPI presets, and defaults live in [`export_options.json`](export_options.json) and are used by both the web export dialog and the Python CLI.
+Themes, DPI presets, preview/export background defaults live in [`export_options.json`](export_options.json) and are used by the web app, export dialog, and Python CLI.
 
 ## Project layout
 

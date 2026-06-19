@@ -1,5 +1,12 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import type { BindFunctions } from '../hooks/useMermaid'
+import {
+  injectBackground,
+  loadPreviewBackground,
+  previewViewportStyle,
+  PREVIEW_BACKGROUND_STORAGE_KEY,
+} from '../lib/background'
+import { BackgroundControl } from './BackgroundControl'
 
 interface PreviewPaneProps {
   svg: string
@@ -18,9 +25,14 @@ export const PreviewPane = memo(function PreviewPane({
   const viewportRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [background, setBackground] = useState(loadPreviewBackground)
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(
     null,
   )
+
+  useEffect(() => {
+    localStorage.setItem(PREVIEW_BACKGROUND_STORAGE_KEY, background)
+  }, [background])
 
   useEffect(() => {
     const container = containerRef.current
@@ -28,9 +40,10 @@ export const PreviewPane = memo(function PreviewPane({
       return
     }
 
-    container.innerHTML = svg
+    const displaySvg = injectBackground(svg, background)
+    container.innerHTML = displaySvg
     bindFunctions?.(container)
-  }, [svg, bindFunctions])
+  }, [svg, background, bindFunctions])
 
   useEffect(() => {
     setScale(1)
@@ -91,6 +104,11 @@ export const PreviewPane = memo(function PreviewPane({
       <div className="preview-header">
         <div className="preview-header-top">
           <span className="preview-title">Preview</span>
+          <BackgroundControl
+            className="preview-background-control background-control"
+            value={background}
+            onChange={setBackground}
+          />
           {isRendering && <span className="preview-status">Rendering…</span>}
         </div>
         <div className="preview-zoom-controls">
@@ -109,6 +127,7 @@ export const PreviewPane = memo(function PreviewPane({
       <div
         ref={viewportRef}
         className="preview-body preview-viewport"
+        style={previewViewportStyle(background)}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={stopDragging}

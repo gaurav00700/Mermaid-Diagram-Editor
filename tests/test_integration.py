@@ -38,6 +38,7 @@ def test_export_options_loads() -> None:
 
     options = load_export_options()
     assert options["defaultDpi"] == 96
+    assert options["defaultPreviewBackground"] == "transparent"
     assert "dark" in options["themes"]
 
 

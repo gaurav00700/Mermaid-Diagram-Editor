@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import html
 import json
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+
+from mermaid_diagram.background import background_css, inject_svg_background
 
 MERMAID_VERSION = "11.4.0"
 MERMAID_CDN = f"https://cdn.jsdelivr.net/npm/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js"
@@ -50,14 +51,6 @@ RENDER_PAGE = """<!DOCTYPE html>
 """
 
 
-def _background_css(background: str) -> str:
-    if background == "transparent":
-        return "transparent"
-    if background == "white":
-        return "#ffffff"
-    return background
-
-
 def _infer_format(output: Path, fmt: str | None) -> str:
     if fmt:
         return fmt.lower()
@@ -65,6 +58,15 @@ def _infer_format(output: Path, fmt: str | None) -> str:
     if suffix in {"png", "svg"}:
         return suffix
     return "png"
+
+
+def _build_page_html(code: str, background: str, theme: str) -> str:
+    return RENDER_PAGE.format(
+        background_css=background_css(background),
+        mermaid_cdn=MERMAID_CDN,
+        code_json=json.dumps(code),
+        theme_json=json.dumps(theme),
+    )
 
 
 def render_diagram(
@@ -81,13 +83,7 @@ def render_diagram(
     if output_format not in {"png", "svg"}:
         raise ValueError(f"Unsupported format: {output_format}")
 
-    page_html = RENDER_PAGE.format(
-        background_css=_background_css(background),
-        mermaid_cdn=MERMAID_CDN,
-        code_json=json.dumps(code),
-        theme_json=json.dumps(theme),
-    )
-
+    page_html = _build_page_html(code, background, theme)
     device_scale = (dpi / 96.0) * scale
 
     with sync_playwright() as playwright:
@@ -100,8 +96,7 @@ def render_diagram(
 
         if output_format == "svg":
             if background not in {"transparent", ""}:
-                bg_color = _background_css(background)
-                svg = _inject_svg_background(svg, bg_color)
+                svg = inject_svg_background(svg, background_css(background))
             output.write_text(svg, encoding="utf-8")
         else:
             container = page.locator("#container")
@@ -113,9 +108,21 @@ def render_diagram(
         browser.close()
 
 
-def _inject_svg_background(svg: str, color: str) -> str:
-    insert_at = svg.find(">")
-    if insert_at == -1:
-        return svg
-    rect = f'<rect width="100%" height="100%" fill="{html.escape(color, quote=True)}"/>'
-    return svg[: insert_at + 1] + rect + svg[insert_at + 1 :]
+def preview_diagram(
+    code: str,
+    *,
+    background: str = "transparent",
+    theme: str = "default",
+) -> None:
+    page_html = _build_page_html(code, background, theme)
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=False)
+        page = browser.new_page(viewport={"width": 1200, "height": 800})
+        page.set_content(page_html, wait_until="networkidle")
+        page.evaluate("() => window.__renderDiagram()")
+
+        while browser.is_connected():
+            page.wait_for_timeout(500)
+
+        browser.close()

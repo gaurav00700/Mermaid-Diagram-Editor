@@ -149,6 +149,42 @@ button.secondary:hover {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.background-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.background-control-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.background-control-label select,
+.background-control-label input[type='color'] {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0.25rem 0.45rem;
+}
+
+.background-control-label input[type='color'] {
+  width: 2.25rem;
+  height: 1.75rem;
+  padding: 0.15rem;
+  cursor: pointer;
+}
+
+.preview-background-control {
+  margin-left: auto;
 }
 
 .preview-title {
@@ -200,10 +236,6 @@ button.secondary:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0),
-    var(--surface);
-  background-size: 16px 16px;
 }
 
 .preview-viewport:active {

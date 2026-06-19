@@ -3,5 +3,6 @@
   "dpiPresets": [72, 96, 150, 300],
   "defaultDpi": 96,
   "defaultTheme": "default",
-  "defaultBackground": "transparent"
+  "defaultBackground": "transparent",
+  "defaultPreviewBackground": "transparent"
 }

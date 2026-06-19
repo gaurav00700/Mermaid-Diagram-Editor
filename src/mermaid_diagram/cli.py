@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 import typer
 
 from mermaid_diagram.options import get_themes, load_export_options
-from mermaid_diagram.render import render_diagram
+from mermaid_diagram.render import preview_diagram, render_diagram
 
 app = typer.Typer(
     name="mermaid-diagram",
@@ -79,6 +79,40 @@ def render_command(
         raise typer.Exit(code=1) from exc
 
     typer.echo(f"Wrote {resolved_output}")
+
+
+@app.command("preview")
+def preview_command(
+    input: Annotated[
+        Path,
+        typer.Option("--input", "-i", help="Input .mmd, .txt, or .md file", exists=True, readable=True),
+    ],
+    background: Annotated[
+        str,
+        typer.Option("--background", "-b", help="Preview background: transparent, white, or #hex"),
+    ] = load_export_options()["defaultPreviewBackground"],
+    theme: Annotated[
+        str,
+        typer.Option("--theme", "-t", help="Mermaid theme"),
+    ] = load_export_options()["defaultTheme"],
+) -> None:
+    """Open an interactive browser preview of a Mermaid diagram."""
+    if theme not in get_themes():
+        typer.secho(
+            f"Unknown theme '{theme}'. Choose from: {', '.join(get_themes())}",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    code = input.read_text(encoding="utf-8")
+
+    try:
+        typer.echo("Opening preview. Close the browser window to exit.")
+        preview_diagram(code, background=background, theme=theme)
+    except Exception as exc:  # noqa: BLE001 - surface preview failures to CLI user
+        typer.secho(f"Preview failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
 
 
 def main() -> None:

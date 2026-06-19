@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BackgroundControl } from './BackgroundControl'
 import {
   DEFAULT_EXPORT_SETTINGS,
   EXPORT_OPTIONS,
@@ -99,40 +100,10 @@ export function ExportDialog({
             </label>
           )}
 
-          <label>
-            Background
-            <select
-              value={
-                settings.background === 'transparent' || settings.background === 'white'
-                  ? settings.background
-                  : 'custom'
-              }
-              onChange={(event) => {
-                const value = event.target.value
-                setSettings((current) => ({
-                  ...current,
-                  background: value === 'custom' ? '#ffffff' : value,
-                }))
-              }}
-            >
-              <option value="transparent">Transparent</option>
-              <option value="white">White</option>
-              <option value="custom">Custom hex</option>
-            </select>
-          </label>
-
-          {settings.background !== 'transparent' && settings.background !== 'white' && (
-            <label>
-              Custom color
-              <input
-                type="color"
-                value={settings.background.startsWith('#') ? settings.background : '#ffffff'}
-                onChange={(event) =>
-                  setSettings((current) => ({ ...current, background: event.target.value }))
-                }
-              />
-            </label>
-          )}
+          <BackgroundControl
+            value={settings.background}
+            onChange={(background) => setSettings((current) => ({ ...current, background }))}
+          />
 
           <label>
             Theme

@@ -61,6 +61,17 @@ def test_export_dialog_opens(page: Page, web_server: str) -> None:
     page.get_by_role("button", name="Cancel").click()
 
 
+def test_preview_background_changes_viewport(page: Page, web_server: str) -> None:
+    page.goto(web_server)
+    page.wait_for_selector(".preview-viewport", timeout=5000)
+    page.locator(".preview-background-control select").select_option("white")
+
+    background = page.locator(".preview-viewport").evaluate(
+        "el => getComputedStyle(el).backgroundColor"
+    )
+    assert background in {"rgb(255, 255, 255)", "white"}
+
+
 @pytest.fixture(scope="module")
 def browser_context():
     with sync_playwright() as playwright:

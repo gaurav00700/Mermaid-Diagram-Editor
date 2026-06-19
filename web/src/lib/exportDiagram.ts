@@ -1,18 +1,5 @@
 import type { ExportSettings } from './exportOptions'
-
-function injectBackground(svg: string, background: string): string {
-  if (background === 'transparent') {
-    return svg
-  }
-
-  const color = background === 'white' ? '#ffffff' : background
-  const insertAt = svg.indexOf('>')
-  if (insertAt === -1) {
-    return svg
-  }
-
-  return `${svg.slice(0, insertAt + 1)}<rect width="100%" height="100%" fill="${color}"/>${svg.slice(insertAt + 1)}`
-}
+import { injectBackground } from './background'
 
 function sanitizeSvgForCanvas(svg: string): string {
   return svg
