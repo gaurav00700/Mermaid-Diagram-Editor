@@ -37,11 +37,21 @@ export const PreviewPane = memo(function PreviewPane({
     setOffset({ x: 0, y: 0 })
   }, [svg])
 
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    const delta = event.deltaY < 0 ? 0.1 : -0.1
-    setScale((current) => Math.max(0.01, Number((current + delta).toFixed(2))))
-  }
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) {
+      return
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      const delta = event.deltaY < 0 ? 0.1 : -0.1
+      setScale((current) => Math.max(0.01, Number((current + delta).toFixed(2))))
+    }
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false })
+    return () => viewport.removeEventListener('wheel', handleWheel)
+  }, [])
 
   const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) {
@@ -79,27 +89,26 @@ export const PreviewPane = memo(function PreviewPane({
   return (
     <div className="preview-pane">
       <div className="preview-header">
-        <span>Preview</span>
-        <div className="preview-header-actions">
+        <div className="preview-header-top">
+          <span className="preview-title">Preview</span>
           {isRendering && <span className="preview-status">Rendering…</span>}
-          <div className="preview-zoom-controls">
-            <button type="button" className="secondary zoom-button" onClick={zoomOut} aria-label="Zoom out">
-              −
-            </button>
-            <span className="preview-zoom-label">{Math.round(scale * 100)}%</span>
-            <button type="button" className="secondary zoom-button" onClick={zoomIn} aria-label="Zoom in">
-              +
-            </button>
-            <button type="button" className="secondary zoom-button" onClick={resetView}>
-              Reset view
-            </button>
-          </div>
+        </div>
+        <div className="preview-zoom-controls">
+          <button type="button" className="secondary zoom-button" onClick={zoomOut} aria-label="Zoom out">
+            −
+          </button>
+          <span className="preview-zoom-label">{Math.round(scale * 100)}%</span>
+          <button type="button" className="secondary zoom-button" onClick={zoomIn} aria-label="Zoom in">
+            +
+          </button>
+          <button type="button" className="secondary zoom-button" onClick={resetView}>
+            Reset view
+          </button>
         </div>
       </div>
       <div
         ref={viewportRef}
         className="preview-body preview-viewport"
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={stopDragging}

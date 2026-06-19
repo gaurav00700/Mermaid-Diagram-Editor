@@ -136,12 +136,24 @@ button.secondary:hover {
 
 .preview-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.6rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   color: var(--muted);
+  flex-shrink: 0;
+}
+
+.preview-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.preview-title {
+  font-weight: 600;
+  color: var(--text);
 }
 
 .preview-header-actions {
@@ -153,6 +165,7 @@ button.secondary:hover {
 .preview-zoom-controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.35rem;
 }
 

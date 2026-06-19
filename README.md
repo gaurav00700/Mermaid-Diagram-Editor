@@ -73,7 +73,9 @@ Run the production build without installing Node locally:
 docker compose up --build
 ```
 
-Open `http://localhost:8080`. Override the host port:
+Open `http://localhost:8080`. After pulling or changing code, rebuild with `--build` and hard-refresh the browser (Cmd+Shift+R) so you get the latest assets.
+
+Override the host port:
 
 ```bash
 PORT=3000 docker compose up --build
