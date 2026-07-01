@@ -2,12 +2,21 @@ import { useRef } from 'react'
 
 interface ToolbarProps {
   onUpload: (content: string) => void
-  onDownload: () => void
+  onDownloadSource: () => void
+  onExport: () => void
   onReset: () => void
+  onToggleHistory: () => void
   uploadError: string | null
 }
 
-export function Toolbar({ onUpload, onDownload, onReset, uploadError }: ToolbarProps) {
+export function Toolbar({
+  onUpload,
+  onDownloadSource,
+  onExport,
+  onReset,
+  onToggleHistory,
+  uploadError,
+}: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,11 +52,17 @@ export function Toolbar({ onUpload, onDownload, onReset, uploadError }: ToolbarP
           hidden
           onChange={handleFileChange}
         />
+        <button type="button" className="secondary" onClick={onToggleHistory}>
+          History
+        </button>
         <button type="button" onClick={() => fileInputRef.current?.click()}>
           Upload
         </button>
-        <button type="button" onClick={onDownload}>
+        <button type="button" onClick={onDownloadSource}>
           Download
+        </button>
+        <button type="button" onClick={onExport}>
+          Export
         </button>
         <button type="button" className="secondary" onClick={onReset}>
           Reset

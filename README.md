@@ -8,8 +8,10 @@ A split-pane Mermaid editor with live preview, browser export (PNG/SVG), a Pytho
 - Upload `.mmd`, `.txt`, or `.md` files from your computer
 - Preview background: transparent (checkerboard), white, or custom hex
 - Export PNG or SVG with custom DPI, background, and theme
-- Persist editor content in `localStorage`
-- CLI for headless batch rendering
+- **Download** Mermaid source (`.mmd`) from the toolbar
+- **History** panel: create new diagram sessions, switch between previous sessions, rename/delete
+- Persist sessions in `localStorage` (web/Docker)
+- CLI for headless batch rendering and file-based session history
 - Docker image for serving the built web app with nginx
 
 ## Prerequisites
@@ -40,6 +42,16 @@ npm run dev
 
 Open the URL shown in the terminal (typically `http://localhost:5173`).
 
+### Toolbar actions
+
+| Button | Action |
+|--------|--------|
+| **History** | Open session list — switch diagrams, create new, rename, delete |
+| **Upload** | Load `.mmd`, `.txt`, or `.md` into the active session |
+| **Download** | Save current Mermaid source as `.mmd` |
+| **Export** | Export rendered diagram as PNG or SVG |
+| **Reset** | Restore the default sample diagram in the active session |
+
 ## CLI
 
 ```bash
@@ -51,6 +63,17 @@ uv run mermaid-diagram render -i examples/sample.mmd -o diagram.svg -f svg --the
 
 # Open an interactive browser preview with background
 uv run mermaid-diagram preview -i examples/sample.mmd --background white --theme dark
+
+# Download / copy Mermaid source to a .mmd file
+uv run mermaid-diagram source export -i examples/sample.mmd -o diagram.mmd
+
+# Session history (stored in ~/.local/share/mermaid-diagram/history.json)
+uv run mermaid-diagram history save -i examples/sample.mmd --title "Sample"
+uv run mermaid-diagram history list
+uv run mermaid-diagram history show <session-id>
+uv run mermaid-diagram history export <session-id> -o restored.mmd
+uv run mermaid-diagram history new --title "Fresh diagram"
+uv run mermaid-diagram history delete <session-id>
 
 # Optional editable install
 uv tool install -e .
@@ -79,6 +102,18 @@ mermaid-diagram render -i examples/sample.mmd -o out.png
 
 Close the browser window to exit preview mode.
 
+### CLI history and source
+
+| Command | Description |
+|---------|-------------|
+| `source export -i … -o …` | Write Mermaid source to a `.mmd` file |
+| `history save -i … [--title]` | Save a file as a history session |
+| `history list` | List saved sessions |
+| `history show <id>` | Print session source to stdout |
+| `history export <id> -o …` | Write session source to a `.mmd` file |
+| `history new [--title]` | Create a session from the default sample |
+| `history delete <id>` | Remove a saved session |
+
 ## Docker serve
 
 Run the production build without installing Node locally:
@@ -104,7 +139,7 @@ docker run -p 8080:80 mermaid-diagram:latest
 
 ## Shared export settings
 
-Themes, DPI presets, preview/export background defaults live in [`export_options.json`](export_options.json) and are used by the web app, export dialog, and Python CLI.
+Themes, DPI presets, preview/export background defaults, and history limits live in [`export_options.json`](export_options.json) and are used by the web app, export dialog, and Python CLI.
 
 ## Project layout
 

@@ -5,4 +5,6 @@ export const DEFAULT_DIAGRAM = `flowchart TD
     D --> B
 `
 
-export const STORAGE_KEY = 'mermaid-diagram-code'
+export const LEGACY_STORAGE_KEY = 'mermaid-diagram-code'
+/** @deprecated Use session storage via history.ts */
+export const STORAGE_KEY = LEGACY_STORAGE_KEY

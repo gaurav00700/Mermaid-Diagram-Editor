@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import threading
 import time
+import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -34,13 +35,17 @@ def compose_cmd() -> list[str] | None:
     return None
 
 
-def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
+def run_cli(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    full_env = os.environ.copy()
+    if env:
+        full_env.update(env)
     return subprocess.run(
         ["uv", "run", "mermaid-diagram", *args],
         cwd=ROOT,
         text=True,
         capture_output=True,
         check=False,
+        env=full_env,
     )
 
 
@@ -248,6 +253,47 @@ def assert_preview_background_white(page: Page, base_url: str) -> None:
 
 def assert_export_dialog_opens(page: Page, base_url: str) -> None:
     page.goto(base_url, wait_until="networkidle")
-    page.get_by_role("button", name="Download").click()
+    page.get_by_role("button", name="Export", exact=True).click()
     page.get_by_role("heading", name="Export Diagram").wait_for()
     page.get_by_role("button", name="Cancel").click()
+
+
+def assert_history_panel_opens(page: Page, base_url: str) -> None:
+    page.goto(base_url, wait_until="networkidle")
+    page.get_by_role("button", name="History", exact=True).click()
+    page.locator(".history-panel").wait_for(state="visible")
+    page.locator(".history-session-list").wait_for(state="visible")
+
+
+def assert_new_diagram_creates_session(page: Page, base_url: str) -> None:
+    page.goto(base_url, wait_until="networkidle")
+    page.get_by_role("button", name="History", exact=True).click()
+    initial_count = page.locator(".history-session-item").count()
+    page.get_by_role("button", name="New diagram").click()
+    page.wait_for_timeout(300)
+    assert page.locator(".history-session-item").count() == initial_count + 1
+
+
+def assert_download_source_triggers_file(page: Page, base_url: str) -> None:
+    page.goto(base_url, wait_until="networkidle")
+    with page.expect_download() as download_info:
+        page.get_by_role("button", name="Download", exact=True).click()
+    download = download_info.value
+    assert download.suggested_filename == "diagram.mmd"
+    path = download.path()
+    assert path is not None
+    content = Path(path).read_text(encoding="utf-8")
+    assert "flowchart" in content or "graph" in content
+
+
+def assert_switch_session_updates_preview(page: Page, base_url: str) -> None:
+    page.goto(base_url, wait_until="networkidle")
+    page.wait_for_selector(".preview-svg svg", timeout=15000)
+    page.get_by_role("button", name="History", exact=True).click()
+    page.get_by_role("button", name="New diagram").click()
+    _set_monaco_content(page, "graph LR\n    SessionB[Second] --> Done[OK]\n")
+    page.locator(".preview-svg").get_by_text("Second", exact=True).wait_for(timeout=15000)
+    sessions = page.locator(".history-session-item")
+    assert sessions.count() >= 2
+    sessions.nth(1).click()
+    page.locator(".preview-svg").get_by_text("Start", exact=True).wait_for(timeout=15000)

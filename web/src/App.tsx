@@ -1,24 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { EditorPane } from './components/EditorPane'
 import { ExportDialog } from './components/ExportDialog'
+import { HistoryPanel } from './components/HistoryPanel'
 import { PreviewPane } from './components/PreviewPane'
 import { Toolbar } from './components/Toolbar'
+import { useHistory } from './hooks/useHistory'
 import { useMermaid } from './hooks/useMermaid'
-import { DEFAULT_DIAGRAM, STORAGE_KEY } from './lib/defaultDiagram'
+import { DEFAULT_DIAGRAM } from './lib/defaultDiagram'
+import { downloadSource } from './lib/downloadSource'
 import { exportDiagram } from './lib/exportDiagram'
-import type { ExportSettings } from './lib/exportOptions'
+import { EXPORT_OPTIONS, type ExportSettings } from './lib/exportOptions'
 import './styles/app.css'
 
-function loadInitialCode(): string {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  return saved ?? DEFAULT_DIAGRAM
-}
-
 export default function App() {
-  const [code, setCode] = useState(loadInitialCode)
-  const [editorKey, setEditorKey] = useState(0)
+  const {
+    sessions,
+    activeSession,
+    activeSessionId,
+    editorKey,
+    updateActiveCode,
+    createSession,
+    switchSession,
+    removeSession,
+    renameActiveSession,
+    replaceActiveCode,
+  } = useHistory()
+
   const [splitRatio, setSplitRatio] = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
@@ -26,11 +36,8 @@ export default function App() {
   const layoutRef = useRef<HTMLDivElement>(null)
   const isFirstRenderRef = useRef(true)
 
+  const code = activeSession.code
   const { svg, error, isRendering, bindFunctions, render } = useMermaid('default')
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, code)
-  }, [code])
 
   useEffect(() => {
     if (isFirstRenderRef.current) {
@@ -71,11 +78,6 @@ export default function App() {
     }
   }, [isDragging])
 
-  const replaceCode = useCallback((nextCode: string) => {
-    setCode(nextCode)
-    setEditorKey((current) => current + 1)
-  }, [])
-
   const handleUpload = useCallback(
     (content: string) => {
       if (!content) {
@@ -83,15 +85,15 @@ export default function App() {
         return
       }
       setUploadError(null)
-      replaceCode(content)
+      replaceActiveCode(content)
     },
-    [replaceCode],
+    [replaceActiveCode],
   )
 
   const handleReset = useCallback(() => {
     setUploadError(null)
-    replaceCode(DEFAULT_DIAGRAM)
-  }, [replaceCode])
+    replaceActiveCode(DEFAULT_DIAGRAM)
+  }, [replaceActiveCode])
 
   const handleExport = useCallback(
     async (settings: ExportSettings) => {
@@ -118,36 +120,55 @@ export default function App() {
     [code, render],
   )
 
+  const handleDownloadSource = useCallback(() => {
+    downloadSource(code, EXPORT_OPTIONS.defaultSourceFilename)
+  }, [code])
+
   return (
     <div className="app">
       <Toolbar
         onUpload={handleUpload}
-        onDownload={() => {
+        onDownloadSource={handleDownloadSource}
+        onExport={() => {
           setExportError(null)
           setExportOpen(true)
         }}
         onReset={handleReset}
+        onToggleHistory={() => setHistoryOpen((current) => !current)}
         uploadError={uploadError}
       />
 
-      <div className="workspace" ref={layoutRef}>
-        <div className="pane editor-container" style={{ width: `${splitRatio * 100}%` }}>
-          <EditorPane code={code} onChange={setCode} editorKey={editorKey} />
-        </div>
-        <div
-          className={`split-handle${isDragging ? ' dragging' : ''}`}
-          onMouseDown={() => setIsDragging(true)}
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize panes"
+      <div className="app-body">
+        <HistoryPanel
+          open={historyOpen}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onClose={() => setHistoryOpen(false)}
+          onNewDiagram={() => createSession()}
+          onSelectSession={switchSession}
+          onDeleteSession={removeSession}
+          onRenameSession={renameActiveSession}
         />
-        <div className="pane preview-container" style={{ width: `${(1 - splitRatio) * 100}%` }}>
-          <PreviewPane
-            svg={svg}
-            error={error}
-            isRendering={isRendering}
-            bindFunctions={bindFunctions}
+
+        <div className="workspace" ref={layoutRef}>
+          <div className="pane editor-container" style={{ width: `${splitRatio * 100}%` }}>
+            <EditorPane code={code} onChange={updateActiveCode} editorKey={editorKey} />
+          </div>
+          <div
+            className={`split-handle${isDragging ? ' dragging' : ''}`}
+            onMouseDown={() => setIsDragging(true)}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize panes"
           />
+          <div className="pane preview-container" style={{ width: `${(1 - splitRatio) * 100}%` }}>
+            <PreviewPane
+              svg={svg}
+              error={error}
+              isRendering={isRendering}
+              bindFunctions={bindFunctions}
+            />
+          </div>
         </div>
       </div>
 

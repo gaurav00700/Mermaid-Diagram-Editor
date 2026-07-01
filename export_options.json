@@ -4,5 +4,7 @@
   "defaultDpi": 96,
   "defaultTheme": "default",
   "defaultBackground": "transparent",
-  "defaultPreviewBackground": "transparent"
+  "defaultPreviewBackground": "transparent",
+  "maxHistoryEntries": 50,
+  "defaultSourceFilename": "diagram.mmd"
 }

@@ -18,6 +18,7 @@ def test_export_options_loads() -> None:
     options = load_export_options()
     assert options["defaultDpi"] == 96
     assert options["defaultPreviewBackground"] == "transparent"
+    assert options["maxHistoryEntries"] == 50
     assert "dark" in options["themes"]
 
 
@@ -142,3 +143,46 @@ def test_cli_preview_missing_input_exits_nonzero() -> None:
     result = run_cli("preview", "-i", "missing.mmd")
     assert result.returncode != 0
     assert "does not exist" in result.stderr
+
+
+def test_cli_source_export(tmp_path: Path) -> None:
+    output = tmp_path / "copy.mmd"
+    result = run_cli("source", "export", "-i", str(SAMPLE), "-o", str(output))
+    assert result.returncode == 0, result.stderr
+    assert output.read_text(encoding="utf-8") == SAMPLE.read_text(encoding="utf-8")
+
+
+def test_cli_history_save_list_export_delete(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    store_file = tmp_path / "history.json"
+    monkeypatch.setenv("MERMAID_DIAGRAM_HISTORY_FILE", str(store_file))
+
+    save = run_cli("history", "save", "-i", str(SAMPLE), "--title", "Sample session")
+    assert save.returncode == 0, save.stderr
+    session_id = save.stdout.strip().split()[2]
+
+    listed = run_cli("history", "list")
+    assert listed.returncode == 0, listed.stderr
+    assert "Sample session" in listed.stdout
+
+    exported = tmp_path / "restored.mmd"
+    export_result = run_cli("history", "export", session_id, "-o", str(exported))
+    assert export_result.returncode == 0, export_result.stderr
+    assert exported.read_text(encoding="utf-8") == SAMPLE.read_text(encoding="utf-8")
+
+    delete_result = run_cli("history", "delete", session_id)
+    assert delete_result.returncode == 0, delete_result.stderr
+    empty = run_cli("history", "list")
+    assert "No saved sessions." in empty.stdout
+
+
+def test_cli_history_new(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    store_file = tmp_path / "history.json"
+    monkeypatch.setenv("MERMAID_DIAGRAM_HISTORY_FILE", str(store_file))
+
+    result = run_cli("history", "new", "--title", "Fresh")
+    assert result.returncode == 0, result.stderr
+    assert "Fresh" in result.stdout
+
+    listed = run_cli("history", "list")
+    assert "Fresh" in listed.stdout
+

@@ -22,3 +22,11 @@ def load_export_options() -> dict[str, Any]:
 
 def get_themes() -> list[str]:
     return load_export_options()["themes"]
+
+
+def get_max_history_entries() -> int:
+    return int(load_export_options()["maxHistoryEntries"])
+
+
+def get_default_source_filename() -> str:
+    return str(load_export_options()["defaultSourceFilename"])

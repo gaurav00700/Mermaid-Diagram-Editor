@@ -8,14 +8,18 @@ import pytest
 from playwright.sync_api import Page
 
 from conftest import (
+    assert_download_source_triggers_file,
     assert_export_dialog_opens,
+    assert_history_panel_opens,
     assert_homepage_loads,
     assert_live_edit_updates_preview,
     assert_monaco_editor_loads,
+    assert_new_diagram_creates_session,
     assert_preview_background_white,
     assert_preview_renders_sample_diagram,
     assert_reset_restores_sample_diagram,
     assert_reset_view_button,
+    assert_switch_session_updates_preview,
     assert_upload_replaces_editor_content,
     assert_wheel_zoom_changes_scale,
     assert_zoom_controls_visible,
@@ -71,3 +75,19 @@ def test_preview_background_white(page: Page, local_web_server: str) -> None:
 
 def test_export_dialog_opens(page: Page, local_web_server: str) -> None:
     assert_export_dialog_opens(page, local_web_server)
+
+
+def test_history_panel_opens(page: Page, local_web_server: str) -> None:
+    assert_history_panel_opens(page, local_web_server)
+
+
+def test_new_diagram_creates_session(page: Page, local_web_server: str) -> None:
+    assert_new_diagram_creates_session(page, local_web_server)
+
+
+def test_download_source_triggers_file(page: Page, local_web_server: str) -> None:
+    assert_download_source_triggers_file(page, local_web_server)
+
+
+def test_switch_session_updates_preview(page: Page, local_web_server: str) -> None:
+    assert_switch_session_updates_preview(page, local_web_server)
