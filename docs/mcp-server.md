@@ -60,7 +60,8 @@ Environment variables (used by `mcp_server.py`):
 | `MCP_TRANSPORT` | `stdio` | `stdio`, `streamable-http`, `sse` |
 | `MCP_HOST` | `0.0.0.0` | Bind address (HTTP modes) |
 | `MCP_PORT` | `8000` | Port (HTTP modes) |
-| `MERMAID_WORKSPACE_ROOT` | — | Container path for relative `output_path` (Docker sets `/workspace`) |
+| `MERMAID_WORKSPACE_ROOT` | — | Base path for relative `output_path` (Docker: `/workspace`; local: set to `${workspaceFolder}` in `mcp.json`) |
+| `FASTMCP_SHOW_SERVER_BANNER` | `true` | Set `false` in `mcp.json` to suppress FastMCP startup banner on stderr (Cursor logs stderr as errors) |
 
 Docker Compose volume env vars:
 
@@ -81,7 +82,7 @@ Only `web` starts with `docker compose up`. MCP services use profile `mcp`.
 | `dpi` | int | `96` | PNG density base |
 | `scale` | float | `1.0` | Extra PNG scale multiplier |
 | `theme` | string | `default` | `default`, `dark`, `forest`, `neutral` |
-| `output_path` | string | — | Optional file path to save output. **uv/uvx:** use a project-relative path with `"cwd": "${workspaceFolder}"` (e.g. `docs/diagram.png`). **Docker:** same relative path with `MERMAID_WORKSPACE` set, or `/output/diagram.png`. |
+| `output_path` | string | — | Optional file path to save output. **uv/uvx:** use a project-relative path with `MERMAID_WORKSPACE_ROOT` set to `${workspaceFolder}` in `mcp.json` (e.g. `docs/diagram.png`). **Docker:** same relative path with `MERMAID_WORKSPACE` set, or `/output/diagram.png`. |
 
 Example prompt in Cursor:
 
@@ -110,8 +111,10 @@ docker compose --profile mcp up -d --build mcp
 
 The project includes [`.cursor/mcp.json`](../.cursor/mcp.json). Enable **one** server in **Cursor Settings → MCP**:
 
-- `mermaid-diagram` — local uv server (stdio); [`mcp.json`](../.cursor/mcp.json) sets `"cwd": "${workspaceFolder}"` so relative `output_path` saves here
+- `mermaid-diagram` — local uv server (stdio); [`mcp.json`](../.cursor/mcp.json) uses `uv --directory` and `MERMAID_WORKSPACE_ROOT` for file save
 - `mermaid-diagram-docker` — Docker HTTP at `http://localhost:8000/mcp` (start `mcp` container first)
+
+> **Cursor note:** `cwd` in `mcp.json` is often ignored when spawning MCP servers. Use `uv --directory /path/to/project` in `args` to locate the Python project, and set `MERMAID_WORKSPACE_ROOT` in `env` for relative `output_path` saves.
 
 When using Docker in **this repo**, set `output_path` under the mounted volume (e.g. `/output/diagram.png` or `diagram.png`). Compose maps `./output` on the host to both `/output` and `/workspace` by default.
 
@@ -120,6 +123,28 @@ When using Docker in **this repo**, set `output_path` under the mounted volume (
 ## Use from another project
 
 Cursor does not support a raw `"git": "https://..."` field in `mcp.json`. You configure a **command** (stdio) or **url** (remote HTTP). To use this MCP server from a different workspace, add one of the configs below to that project's `.cursor/mcp.json` or global `~/.cursor/mcp.json`.
+
+```json
+{
+  "mcpServers": {
+    "mermaid-diagram": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${workspaceFolder}",
+        "run",
+        "mermaid-diagram-mcp"
+      ],
+      "env": {
+        "MERMAID_WORKSPACE_ROOT": "${workspaceFolder}",
+        "FASTMCP_SHOW_SERVER_BANNER": "false"
+      }
+    }
+  }
+}
+```
+
+Use `"--directory", "/absolute/path/to/mermaid_diagram"` when configuring from another project's `mcp.json`.
 
 ### Option A — `uvx` from Git (quickest)
 
@@ -135,13 +160,16 @@ Add to that project's `.cursor/mcp.json` or global `~/.cursor/mcp.json`:
         "git+https://github.com/gaurav00700/Mermaid-Diagram-Editor.git@main",
         "mermaid-diagram-mcp"
       ],
-      "cwd": "${workspaceFolder}"
+      "env": {
+        "MERMAID_WORKSPACE_ROOT": "${workspaceFolder}",
+        "FASTMCP_SHOW_SERVER_BANNER": "false"
+      }
     }
   }
 }
 ```
 
-**`cwd: "${workspaceFolder}"`** makes relative `output_path` values (e.g. `docs/diagram.png`) save into the project Cursor has open. No Docker volume mount needed.
+**`MERMAID_WORKSPACE_ROOT`** makes relative `output_path` values (e.g. `docs/diagram.png`) save into the project Cursor has open. No Docker volume mount needed.
 
 Chromium is installed automatically on the **first render** if missing — no separate `playwright install` step. The first diagram may take longer while the browser downloads.
 
@@ -166,14 +194,22 @@ In the other project's `.cursor/mcp.json` (for saving into **that** project, add
   "mcpServers": {
     "mermaid-diagram": {
       "command": "uv",
-      "args": ["run", "mermaid-diagram-mcp"],
-      "cwd": "${userHome}/.local/share/mcp/mermaid-diagram"
+      "args": [
+        "--directory",
+        "${userHome}/.local/share/mcp/mermaid-diagram",
+        "run",
+        "mermaid-diagram-mcp"
+      ],
+      "env": {
+        "MERMAID_WORKSPACE_ROOT": "${workspaceFolder}",
+        "FASTMCP_SHOW_SERVER_BANNER": "false"
+      }
     }
   }
 }
 ```
 
-`cwd` here points at the server clone (required for `uv run`). To save files into the **client** project, use Option A with `"cwd": "${workspaceFolder}"` or pass an absolute `output_path`.
+`--directory` points at the server clone (required for `uv run`). `MERMAID_WORKSPACE_ROOT` saves files into the **client** project open in Cursor.
 
 Update later:
 
@@ -231,7 +267,10 @@ Any `mcp.json`:
     "mermaid-diagram": {
       "command": "mermaid-diagram-mcp",
       "args": [],
-      "cwd": "${workspaceFolder}"
+      "env": {
+        "MERMAID_WORKSPACE_ROOT": "${workspaceFolder}",
+        "FASTMCP_SHOW_SERVER_BANNER": "false"
+      }
     }
   }
 }
@@ -280,14 +319,18 @@ uv run pytest tests/ -m mcp_docker -v   # requires Docker
 | Symptom | Fix |
 |---------|-----|
 | Server not listed | Check `.cursor/mcp.json` path; reload MCP or restart Cursor |
+| Red `[error]` lines but `connect_success` in log | Normal — FastMCP banner and Python warnings go to stderr; set `FASTMCP_SHOW_SERVER_BANNER=false` or pull latest (banner disabled in code) |
+| `Failed to spawn: mermaid-diagram-mcp` | Use `uv --directory /path/to/project run mermaid-diagram-mcp` in `args` — `cwd` alone is not enough in Cursor |
+| `uv` command not found | Use the full path to `uv` (e.g. `/Users/you/.local/bin/uv`) as `"command"` |
 | Playwright browser missing | Restart MCP and render again (auto-install runs on first render); or run `uv run playwright install chromium` manually |
 | Docker mode fails | Run `docker compose --profile mcp up -d --build mcp` in the clone directory |
 | `curl` returns 406 | Normal for plain GET — use MCP client or POST with `Accept: text/event-stream` |
 | Asyncio / render error | Ensure latest `mcp_server.py` (render runs in a thread pool) |
 | Duplicate tools | Enable only one of `mermaid-diagram` / `mermaid-diagram-docker` |
-| `output_path` not created (uv/uvx) | Add `"cwd": "${workspaceFolder}"` and use a relative path like `docs/diagram.png` |
+| `output_path` not created (uv/uvx) | Set `"MERMAID_WORKSPACE_ROOT": "${workspaceFolder}"` in `env` and use a relative path like `docs/diagram.png` |
 | `output_path` not created (Docker) | Start container with `MERMAID_WORKSPACE=/path/to/your-project`; use relative paths like `docs/diagram.png` |
 | `output_path` host absolute path fails (Docker) | Use project-relative path or `/output/...` — host paths are not visible inside the container |
+| `Could not locate export_options.json` | Pull latest `main` (config is bundled in the wheel); run `uv cache clean` after updating |
 
 ---
 

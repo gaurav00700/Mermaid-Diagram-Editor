@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import warnings
 from pathlib import Path
 from typing import Literal
 
@@ -121,8 +122,9 @@ async def render_mermaid_diagram(
 
 
 def main() -> None:
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib")
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
-    run_kwargs: dict[str, object] = {}
+    run_kwargs: dict[str, object] = {"show_banner": False}
     if transport in {"streamable-http", "http", "sse"}:
         run_kwargs["host"] = os.environ.get("MCP_HOST", "0.0.0.0")
         run_kwargs["port"] = int(os.environ.get("MCP_PORT", "8000"))

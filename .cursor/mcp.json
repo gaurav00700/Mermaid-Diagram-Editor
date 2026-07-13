@@ -2,8 +2,16 @@
   "mcpServers": {
     "mermaid-diagram": {
       "command": "uv",
-      "args": ["run", "mermaid-diagram-mcp"],
-      "cwd": "${workspaceFolder}"
+      "args": [
+        "--directory",
+        "${workspaceFolder}",
+        "run",
+        "mermaid-diagram-mcp"
+      ],
+      "env": {
+        "MERMAID_WORKSPACE_ROOT": "${workspaceFolder}",
+        "FASTMCP_SHOW_SERVER_BANNER": "false"
+      }
     },
     "mermaid-diagram-docker": {
       "url": "http://localhost:8000/mcp"
