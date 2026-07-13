@@ -1,3 +1,1 @@
-from mermaid_diagram.cli import main
-
-__all__ = ["main"]
+"""Mermaid diagram editor CLI and MCP server."""

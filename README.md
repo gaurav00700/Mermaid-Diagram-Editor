@@ -177,13 +177,13 @@ docker run -p 8080:80 mermaid-diagram:latest
 
 ## Shared export settings
 
-Themes, DPI presets, preview/export background defaults, and history limits live in [`export_options.json`](export_options.json) and are used by the web app, export dialog, and Python CLI.
+Themes, DPI presets, preview/export background defaults, and history limits live in [`src/mermaid_diagram/export_options.json`](src/mermaid_diagram/export_options.json) and are used by the web app, export dialog, and Python CLI.
 
 ## Project layout
 
 ```
 mermaid_diagram/
-├── export_options.json
+│   └── export_options.json
 ├── pyproject.toml
 ├── Dockerfile
 ├── Dockerfile.mcp

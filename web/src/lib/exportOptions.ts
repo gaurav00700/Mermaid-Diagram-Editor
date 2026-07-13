@@ -1,4 +1,4 @@
-import exportOptions from '../../../export_options.json'
+import exportOptions from '../../../src/mermaid_diagram/export_options.json'
 
 export type MermaidTheme = (typeof exportOptions.themes)[number]
 export type ExportFormat = 'png' | 'svg'

@@ -13,13 +13,35 @@ pytestmark = pytest.mark.cli
 
 
 def test_export_options_loads() -> None:
-    from mermaid_diagram.options import load_export_options
+    from mermaid_diagram.options import _options_path, load_export_options
 
     options = load_export_options()
     assert options["defaultDpi"] == 96
     assert options["defaultPreviewBackground"] == "transparent"
     assert options["maxHistoryEntries"] == 50
     assert "dark" in options["themes"]
+    assert _options_path().name == "export_options.json"
+    assert "mermaid_diagram" in _options_path().as_posix()
+
+
+def test_wheel_includes_export_options() -> None:
+    import subprocess
+    import zipfile
+
+    from conftest import ROOT
+
+    build = subprocess.run(
+        ["uv", "build"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert build.returncode == 0, build.stderr
+    wheel = next((ROOT / "dist").glob("*.whl"))
+    with zipfile.ZipFile(wheel) as archive:
+        names = archive.namelist()
+    assert "mermaid_diagram/export_options.json" in names
 
 
 def test_cli_version() -> None:

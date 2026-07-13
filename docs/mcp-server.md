@@ -299,4 +299,4 @@ uv run pytest tests/ -m mcp_docker -v   # requires Docker
 | [`Dockerfile.mcp`](../Dockerfile.mcp) | Playwright-based MCP image |
 | [`docker-compose.yml`](../docker-compose.yml) | `web`, `mcp` (HTTP on port 8000) |
 | [`.cursor/mcp.json`](../.cursor/mcp.json) | Cursor config for this repo |
-| [`export_options.json`](../export_options.json) | Shared defaults (themes, DPI) |
+| [`src/mermaid_diagram/export_options.json`](../src/mermaid_diagram/export_options.json) | Shared defaults (themes, DPI) |

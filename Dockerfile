@@ -2,7 +2,7 @@
 FROM node:20-alpine AS web-build
 
 WORKDIR /app
-COPY export_options.json ./export_options.json
+COPY src/mermaid_diagram/export_options.json ./src/mermaid_diagram/export_options.json
 COPY web/package.json web/package-lock.json ./web/
 WORKDIR /app/web
 RUN npm ci

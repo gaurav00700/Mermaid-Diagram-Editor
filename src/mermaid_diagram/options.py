@@ -1,17 +1,39 @@
 import json
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
-_CANDIDATE_PATHS = (
-    Path(__file__).resolve().parents[2] / "export_options.json",
-    Path.cwd() / "export_options.json",
-)
-
 
 def _options_path() -> Path:
-    for candidate in _CANDIDATE_PATHS:
-        if candidate.exists():
-            return candidate
+    """Locate export_options.json for dev checkout, editable install, and uvx wheels."""
+    candidates: list[Path] = []
+
+    try:
+        packaged = resources.files("mermaid_diagram").joinpath("export_options.json")
+        with resources.as_file(packaged) as path:
+            if path.is_file():
+                candidates.append(path)
+    except (FileNotFoundError, ModuleNotFoundError, TypeError):
+        pass
+
+    module_dir = Path(__file__).resolve().parent
+    candidates.extend(
+        (
+            module_dir / "export_options.json",
+            module_dir.parents[2] / "export_options.json",
+            Path.cwd() / "export_options.json",
+        )
+    )
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if resolved.is_file():
+            return resolved
+
     raise FileNotFoundError("Could not locate export_options.json")
 
 

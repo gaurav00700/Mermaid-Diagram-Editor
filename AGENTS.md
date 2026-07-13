@@ -14,12 +14,12 @@ Full-stack Mermaid diagram tool with deployment modes that must stay in sync:
 | **MCP (uv)** | `uv run mermaid-diagram-mcp` | stdio MCP server for AI tool calls |
 | **MCP (Docker)** | `docker compose --profile mcp up -d mcp` | HTTP MCP at `http://localhost:8000/mcp` |
 
-Shared defaults (themes, DPI, backgrounds) live in [`export_options.json`](export_options.json) and are consumed by the web app, Python CLI, and MCP server.
+Shared defaults (themes, DPI, backgrounds) live in [`src/mermaid_diagram/export_options.json`](src/mermaid_diagram/export_options.json) and are consumed by the web app, Python CLI, and MCP server.
 
 ## Repository layout
 
 ```
-export_options.json     # Shared themes/DPI/background defaults
+src/mermaid_diagram/export_options.json  # Shared themes/DPI/background defaults (bundled in wheel)
 pyproject.toml          # Python package + pytest config (uv)
 src/mermaid_diagram/    # CLI + MCP: cli.py, render.py, mcp_server.py, background.py, history.py, options.py
 web/                    # React 19 + Vite + TypeScript frontend
@@ -115,7 +115,7 @@ CI runs four marked suites in parallel on every pull request (see [`.github/work
 
 When adding themes, DPI presets, or background defaults:
 
-1. Update [`export_options.json`](export_options.json)
+1. Update [`src/mermaid_diagram/export_options.json`](src/mermaid_diagram/export_options.json)
 2. Web types flow from JSON via [`web/src/lib/exportOptions.ts`](web/src/lib/exportOptions.ts)
 3. Python reads via [`src/mermaid_diagram/options.py`](src/mermaid_diagram/options.py)
 4. Extend CLI theme validation and export/preview UI as needed
