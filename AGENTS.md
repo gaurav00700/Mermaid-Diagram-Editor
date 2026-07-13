@@ -31,6 +31,7 @@ web/                    # React 19 + Vite + TypeScript frontend
     components/         # EditorPane, PreviewPane, HistoryPanel, Toolbar, ExportDialog, …
 tests/                  # pytest + Playwright (cli, web_local, web_docker, mcp_docker)
 examples/               # sample.mmd, invalid.mmd
+docs/                   # mcp-server.md
 .github/workflows/ci.yml
 Dockerfile, Dockerfile.mcp, docker-compose.yml, nginx.conf
 .cursor/mcp.json        # Cursor MCP config (uv + Docker entries)

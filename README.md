@@ -12,8 +12,14 @@ A split-pane Mermaid editor with live preview, browser export (PNG/SVG), a Pytho
 - **History** panel: create new diagram sessions, switch between previous sessions, rename/delete
 - Persist sessions in `localStorage` (web/Docker)
 - CLI for headless batch rendering and file-based session history
-- **MCP server** for AI assistants (Cursor/Claude) — render diagrams via tool call
+- **MCP server** for AI assistants (Cursor/Claude) — render diagrams via tool call ([guide](docs/mcp-server.md))
 - Docker image for serving the built web app with nginx
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [MCP Server](docs/mcp-server.md) | Cursor MCP setup, tool reference, using the server from other projects via Git, troubleshooting |
 
 ## Prerequisites
 
@@ -117,52 +123,15 @@ Close the browser window to exit preview mode.
 
 ## MCP Server
 
-Expose Mermaid rendering as an MCP tool for Cursor, Claude, and other MCP clients. The tool returns inline PNG/SVG content and can optionally write to disk.
+See [docs/mcp-server.md](docs/mcp-server.md) for setup, tool parameters, and using the server from other projects.
 
-| Mode | Entry point | When to use |
-|------|-------------|-------------|
-| **uv (local)** | `uv run mermaid-diagram-mcp` | Dev machines with uv + Playwright |
-| **Docker** | `docker compose --profile mcp run --rm -T mcp` | Isolated server with bundled Chromium |
-
-### Prerequisites
-
-**uv mode:**
+Quick start in this repo:
 
 ```bash
-uv sync
-uv run playwright install chromium
+uv sync && uv run playwright install chromium
 ```
 
-**Docker mode:**
-
-```bash
-docker compose --profile mcp build mcp
-```
-
-### Cursor setup
-
-The repo includes [`.cursor/mcp.json`](.cursor/mcp.json) with both server entries. Enable one in Cursor MCP settings:
-
-- `mermaid-diagram` — local uv server
-- `mermaid-diagram-docker` — Docker compose server
-
-### Tool: `render_mermaid_diagram`
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `code` | string | required | Mermaid source |
-| `format` | `png` \| `svg` | `png` | Output format |
-| `background` | string | `transparent` | `transparent`, `white`, or CSS color |
-| `dpi` | int | `96` | PNG density base |
-| `scale` | float | `1.0` | Extra PNG scale multiplier |
-| `theme` | string | `default` | `default`, `dark`, `forest`, `neutral` |
-| `output_path` | string | — | Optional file path to save output |
-
-When using Docker, set `output_path` under the mounted volume (e.g. `/output/diagram.png`). The compose file maps `./output` on the host to `/output` in the container.
-
-Example prompt in Cursor:
-
-> Use the mermaid-diagram MCP tool to render this flowchart as a 300 DPI PNG with white background.
+Enable `mermaid-diagram` or `mermaid-diagram-docker` from [`.cursor/mcp.json`](.cursor/mcp.json) in Cursor Settings → MCP.
 
 ## Docker serve
 
@@ -202,6 +171,7 @@ mermaid_diagram/
 ├── docker-compose.yml
 ├── .cursor/mcp.json
 ├── examples/
+├── docs/                  # Documentation (see docs/mcp-server.md)
 ├── src/mermaid_diagram/   # Python CLI + MCP server
 └── web/                   # React + Vite app
 ```
