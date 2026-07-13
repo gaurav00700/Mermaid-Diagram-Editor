@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Mermaid diagram editor web app and CLI for PNG/SVG export"
 readme = "README.md"
 authors = [
-    { name = "Gaurav", email = "gaurav.sharma@lecturio.de" }
+    { name = "Gaurav Sharma", email = "gauravsharma0509@gmail.com" }
 ]
 requires-python = ">=3.12"
 dependencies = [

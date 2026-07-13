@@ -247,7 +247,7 @@ In the other project:
 }
 ```
 
-Use `output_path` as a **project-relative** path (e.g. `docs/kg-build-pipeline.png`). That writes into your mounted project directory. Do **not** pass host absolute paths like `/Users/you/project/docs/diagram.png` — the container cannot see those unless they are bind-mounted.
+Use `output_path` as a **project-relative** path (e.g. `docs/diagram.png`). That writes into your mounted project directory. Do **not** pass host absolute paths like `/Users/you/project/docs/diagram.png` — the container cannot see those unless they are bind-mounted.
 
 Scratch exports without a workspace mount still work via `/output/diagram.png` (written to `./output` in the server clone directory).
 
