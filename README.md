@@ -131,7 +131,7 @@ Quick start in this repo:
 uv sync && uv run playwright install chromium
 ```
 
-Enable `mermaid-diagram` or `mermaid-diagram-docker` from [`.cursor/mcp.json`](.cursor/mcp.json) in Cursor Settings → MCP.
+Enable `mermaid-diagram` (uv) or `mermaid-diagram-docker` (HTTP — start `docker compose --profile mcp up -d mcp` first) from [`.cursor/mcp.json`](.cursor/mcp.json).
 
 ## Docker serve
 
@@ -148,9 +148,15 @@ Open `http://localhost:8080`. After pulling or changing code, rebuild with `--bu
 | Service | Container name | Purpose |
 |---------|----------------|---------|
 | `web` | `mermaid-diagram-web` | nginx serving the built web app on port 8080 |
-| `mcp` | `mermaid-diagram-mcp` | MCP stdio server (profile `mcp` only; not started by default) |
+| `mcp` | `mermaid-diagram-mcp` | MCP over HTTP at `http://localhost:8000/mcp` |
 
-Check running containers:
+Start the MCP server:
+
+```bash
+docker compose --profile mcp up -d --build mcp
+```
+
+See [docs/mcp-server.md](docs/mcp-server.md) for Cursor URL config.
 
 ```bash
 docker ps --filter name=mermaid-diagram

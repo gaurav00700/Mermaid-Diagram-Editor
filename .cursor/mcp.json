@@ -6,17 +6,7 @@
       "cwd": "${workspaceFolder}"
     },
     "mermaid-diagram-docker": {
-      "command": "docker",
-      "args": [
-        "compose",
-        "--profile",
-        "mcp",
-        "run",
-        "--rm",
-        "-T",
-        "mcp"
-      ],
-      "cwd": "${workspaceFolder}"
+      "url": "http://localhost:8000/mcp"
     }
   }
 }

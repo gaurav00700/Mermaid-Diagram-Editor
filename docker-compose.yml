@@ -11,8 +11,15 @@ services:
       context: .
       dockerfile: Dockerfile.mcp
     container_name: mermaid-diagram-mcp
-    stdin_open: true
-    tty: false
     profiles: ["mcp"]
+    ports:
+      - "${MCP_PORT:-8000}:8000"
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8000"
+      MERMAID_WORKSPACE_ROOT: /workspace
     volumes:
       - ${MERMAID_OUTPUT_DIR:-./output}:/output
+      - ${MERMAID_WORKSPACE:-./output}:/workspace
+    restart: unless-stopped

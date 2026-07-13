@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -16,7 +17,10 @@ mcp = FastMCP(
     name="mermaid-diagram",
     instructions=(
         "Render Mermaid diagram source code to PNG or SVG. "
-        "Use background, dpi, theme, and scale to match export preferences."
+        "Use background, dpi, theme, and scale to match export preferences. "
+        "For Docker HTTP mode, set output_path to a project-relative path "
+        "(e.g. docs/diagram.png) when MERMAID_WORKSPACE mounts the client project "
+        "to /workspace; host absolute paths are not writable inside the container."
     ),
 )
 
@@ -25,6 +29,37 @@ def _validate_theme(theme: str) -> None:
     if theme not in get_themes():
         themes = ", ".join(get_themes())
         raise ValueError(f"Unknown theme '{theme}'. Choose from: {themes}")
+
+
+def _resolve_output_path(output_path: str) -> Path:
+    """Resolve output_path for local or containerized MCP.
+
+    When MERMAID_WORKSPACE_ROOT is set (Docker), relative paths are written under
+    that mount (e.g. docs/diagram.png -> /workspace/docs/diagram.png). Host
+    absolute paths outside /output and /workspace raise a clear error.
+    """
+    path = Path(output_path)
+    workspace_root = os.environ.get("MERMAID_WORKSPACE_ROOT")
+    if not workspace_root:
+        return path
+
+    root = Path(workspace_root)
+    if not path.is_absolute():
+        return root / path
+
+    normalized = path.as_posix()
+    allowed_roots = {Path("/output").as_posix(), root.as_posix()}
+    if not any(
+        normalized == allowed or normalized.startswith(f"{allowed}/")
+        for allowed in allowed_roots
+    ):
+        raise ValueError(
+            f"output_path '{output_path}' is not writable in the Docker MCP container. "
+            "Use a project-relative path (e.g. docs/diagram.png) after starting the container "
+            "with MERMAID_WORKSPACE set to your project directory, or /output/diagram.png "
+            "for the server clone's output folder."
+        )
+    return path
 
 
 @mcp.tool()
@@ -40,7 +75,8 @@ async def render_mermaid_diagram(
     """Render Mermaid source to PNG or SVG with configurable export options.
 
     Returns inline PNG image content or SVG text. When output_path is set,
-    also writes the rendered file to that path.
+    also writes the rendered file to that path. In Docker, use a path relative
+    to the mounted workspace (e.g. docs/diagram.png) or /output/diagram.png.
     """
     _validate_theme(theme)
 
@@ -59,7 +95,7 @@ async def render_mermaid_diagram(
 
     saved_note = ""
     if output_path:
-        path = Path(output_path)
+        path = _resolve_output_path(output_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         if format == "svg":
             if not isinstance(result, str):
@@ -85,7 +121,12 @@ async def render_mermaid_diagram(
 
 
 def main() -> None:
-    mcp.run()
+    transport = os.environ.get("MCP_TRANSPORT", "stdio")
+    run_kwargs: dict[str, object] = {}
+    if transport in {"streamable-http", "http", "sse"}:
+        run_kwargs["host"] = os.environ.get("MCP_HOST", "0.0.0.0")
+        run_kwargs["port"] = int(os.environ.get("MCP_PORT", "8000"))
+    mcp.run(transport=transport, **run_kwargs)
 
 
 if __name__ == "__main__":

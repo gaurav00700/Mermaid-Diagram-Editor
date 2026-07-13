@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import subprocess
 import textwrap
+from pathlib import Path
 
 import pytest
 
@@ -97,6 +98,55 @@ def test_mcp_docker_output_volume() -> None:
     assert result.returncode == 0, result.stderr
     assert (host_output / "diagram.png").exists()
     assert (host_output / "diagram.png").stat().st_size > 0
+
+
+def test_mcp_docker_workspace_relative_output(tmp_path: Path) -> None:
+    cmd = compose_cmd()
+    assert cmd is not None
+    host_file = tmp_path / "docs" / "diagram.png"
+    code = SAMPLE.read_text(encoding="utf-8")
+    script = textwrap.dedent(
+        f"""
+        from pathlib import Path
+        from mermaid_diagram.mcp_server import _resolve_output_path
+        from mermaid_diagram.render import render_diagram_result
+
+        code = {code!r}
+        result = render_diagram_result(code, fmt="png")
+        path = _resolve_output_path("docs/diagram.png")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(result)
+        """
+    ).strip()
+    result = subprocess.run(
+        [
+            *cmd,
+            "--profile",
+            "mcp",
+            "run",
+            "--rm",
+            "-T",
+            "-v",
+            f"{tmp_path}:/workspace",
+            "-e",
+            "MERMAID_WORKSPACE_ROOT=/workspace",
+            "--entrypoint",
+            "",
+            "mcp",
+            "uv",
+            "run",
+            "python",
+            "-c",
+            script,
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert host_file.exists()
+    assert host_file.stat().st_size > 0
 
 
 @pytest.mark.parametrize("theme", ["default", "dark", "forest", "neutral"])

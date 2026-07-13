@@ -12,7 +12,7 @@ Full-stack Mermaid diagram tool with deployment modes that must stay in sync:
 | **Web (container)** | `Dockerfile` + nginx | Production static build in container `mermaid-diagram-web` on port 8080 |
 | **CLI** | `src/mermaid_diagram/` | Headless PNG/SVG render and browser preview via Playwright |
 | **MCP (uv)** | `uv run mermaid-diagram-mcp` | stdio MCP server for AI tool calls |
-| **MCP (Docker)** | `docker compose --profile mcp run --rm -T mcp` | Container `mermaid-diagram-mcp`; no local Playwright |
+| **MCP (Docker)** | `docker compose --profile mcp up -d mcp` | HTTP MCP at `http://localhost:8000/mcp` |
 
 Shared defaults (themes, DPI, backgrounds) live in [`export_options.json`](export_options.json) and are consumed by the web app, Python CLI, and MCP server.
 
@@ -54,10 +54,10 @@ cd web && npm run dev          # Vite dev server (~5173)
 uv run mermaid-diagram render -i examples/sample.mmd -o out.png
 uv run mermaid-diagram-mcp     # MCP server (stdio)
 docker compose up --build      # web container mermaid-diagram-web on :8080
-docker compose --profile mcp build mcp   # MCP image (container mermaid-diagram-mcp)
+docker compose --profile mcp up -d --build mcp   # HTTP MCP on :8000
 ```
 
-[`docker-compose.yml`](docker-compose.yml): `web` → `mermaid-diagram-web`, `mcp` → `mermaid-diagram-mcp` (profile `mcp`).
+[`docker-compose.yml`](docker-compose.yml): `web` → `mermaid-diagram-web`, `mcp` → `mermaid-diagram-mcp` (HTTP, profile `mcp`).
 
 ### Build & test (run before finishing web/CLI changes)
 
@@ -107,9 +107,8 @@ CI runs four marked suites in parallel on every pull request (see [`.github/work
 
 ### MCP server
 
-- [`mcp_server.py`](src/mermaid_diagram/mcp_server.py) exposes `render_mermaid_diagram` via FastMCP stdio transport.
-- Tool returns inline PNG (`Image`) or SVG text plus optional `output_path` file write.
-- Docker MCP uses [`Dockerfile.mcp`](Dockerfile.mcp) (Playwright base image); compose service `mcp` / container `mermaid-diagram-mcp` with profile `mcp` and `./output` → `/output` volume.
+- [`mcp_server.py`](src/mermaid_diagram/mcp_server.py) exposes `render_mermaid_diagram` via FastMCP (stdio locally, HTTP in Docker).
+- Docker MCP uses [`Dockerfile.mcp`](Dockerfile.mcp); compose service `mcp` / container `mermaid-diagram-mcp` on port 8000 with `./output` → `/output` and `MERMAID_WORKSPACE` → `/workspace` volume mounts.
 - Cursor config in [`.cursor/mcp.json`](.cursor/mcp.json) — uv and Docker entries.
 
 ## Shared config contract

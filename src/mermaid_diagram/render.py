@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
 from mermaid_diagram.background import background_css, inject_svg_background
 
-MERMAID_VERSION = "11.4.0"
+MERMAID_VERSION = "11.15.0"
 MERMAID_CDN = f"https://cdn.jsdelivr.net/npm/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js"
+_playwright_ready = False
 
 RENDER_PAGE = """<!DOCTYPE html>
 <html>
@@ -69,6 +73,24 @@ def _build_page_html(code: str, background: str, theme: str) -> str:
     )
 
 
+def _ensure_playwright_chromium() -> None:
+    """Install Chromium on first use when missing (uvx / fresh installs)."""
+    global _playwright_ready
+    if _playwright_ready or os.environ.get("MERMAID_SKIP_PLAYWRIGHT_INSTALL"):
+        return
+
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            browser.close()
+    except Exception:
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            check=True,
+        )
+    _playwright_ready = True
+
+
 def render_diagram_result(
     code: str,
     *,
@@ -82,6 +104,8 @@ def render_diagram_result(
     output_format = fmt.lower()
     if output_format not in {"png", "svg"}:
         raise ValueError(f"Unsupported format: {output_format}")
+
+    _ensure_playwright_chromium()
 
     page_html = _build_page_html(code, background, theme)
     device_scale = (dpi / 96.0) * scale

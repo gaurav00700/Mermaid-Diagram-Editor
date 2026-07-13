@@ -16,12 +16,74 @@ from conftest import (
     png_dimensions,
     run_cli,
 )
-from mermaid_diagram.render import render_diagram_result
+from mermaid_diagram.mcp_server import _resolve_output_path
+from mermaid_diagram.render import _ensure_playwright_chromium, render_diagram_result
 
 pytestmark = pytest.mark.cli
 
 SAMPLE_CODE = SAMPLE.read_text(encoding="utf-8")
 INVALID_CODE = INVALID.read_text(encoding="utf-8")
+
+NUMBERED_LABEL_CODE = """\
+flowchart TB
+  SCHED["0. EventBridge Scheduler<br/>daily cron + manual"]
+  SCOPE["1. List-lectures Lambda<br/>is_live=1 live set"]
+  SCHED --> SCOPE
+"""
+
+
+def test_ensure_playwright_chromium_skips_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    import mermaid_diagram.render as render_module
+
+    render_module._playwright_ready = False
+    monkeypatch.setenv("MERMAID_SKIP_PLAYWRIGHT_INSTALL", "1")
+    _ensure_playwright_chromium()
+    assert render_module._playwright_ready is False
+
+
+def test_resolve_output_path_local_absolute() -> None:
+    path = _resolve_output_path("/tmp/diagram.png")
+    assert path == Path("/tmp/diagram.png")
+
+
+def test_resolve_output_path_docker_relative(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MERMAID_WORKSPACE_ROOT", "/workspace")
+    path = _resolve_output_path("docs/diagram.png")
+    assert path == Path("/workspace/docs/diagram.png")
+
+
+def test_resolve_output_path_docker_container_absolute(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MERMAID_WORKSPACE_ROOT", "/workspace")
+    assert _resolve_output_path("/workspace/docs/diagram.png") == Path("/workspace/docs/diagram.png")
+    assert _resolve_output_path("/output/diagram.png") == Path("/output/diagram.png")
+
+
+def test_resolve_output_path_docker_rejects_host_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MERMAID_WORKSPACE_ROOT", "/workspace")
+    with pytest.raises(ValueError, match="not writable in the Docker MCP container"):
+        _resolve_output_path("/Users/me/project/docs/diagram.png")
+
+
+def test_mcp_tool_output_path_docker_relative(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MERMAID_WORKSPACE_ROOT", str(tmp_path))
+    output = tmp_path / "docs" / "diagram.png"
+    result = invoke_render_mermaid_diagram(
+        code=SAMPLE_CODE,
+        format="png",
+        output_path="docs/diagram.png",
+    )
+    assert isinstance(result[0], Image)
+    assert output.exists()
+    assert output.stat().st_size > 0
+
+
+def test_render_numbered_labels_no_markdown_error() -> None:
+    """Mermaid 11.4 showed 'Unsupported markdown: list' for N. prefixes; 11.15+ shows raw text."""
+    result = render_diagram_result(NUMBERED_LABEL_CODE, fmt="svg")
+    assert isinstance(result, str)
+    assert "Unsupported markdown" not in result
+    assert "EventBridge Scheduler" in result
+    assert "List-lectures Lambda" in result
 
 
 def test_render_diagram_result_png() -> None:
