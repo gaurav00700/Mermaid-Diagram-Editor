@@ -13,6 +13,22 @@ Repository: **https://github.com/gaurav00700/Mermaid-Diagram-Editor.git**
 
 Both modes use stdio transport and the same `render_mermaid_diagram` tool.
 
+### Docker Compose services
+
+[`docker-compose.yml`](../docker-compose.yml) defines two services:
+
+| Service | Container name | Purpose |
+|---------|----------------|---------|
+| `web` | `mermaid-diagram-web` | Production web app (nginx on port 8080) |
+| `mcp` | `mermaid-diagram-mcp` | MCP server over stdio (profile `mcp`; started on demand) |
+
+Only `web` starts with `docker compose up`. The MCP service uses profile `mcp`:
+
+```bash
+docker compose --profile mcp build mcp
+docker compose --profile mcp run --rm -T mcp
+```
+
 ## Tool: `render_mermaid_diagram`
 
 | Parameter | Type | Default | Description |
@@ -225,5 +241,6 @@ uv run pytest tests/ -m mcp_docker -v   # requires Docker
 |------|---------|
 | [`src/mermaid_diagram/mcp_server.py`](../src/mermaid_diagram/mcp_server.py) | FastMCP server and tool |
 | [`Dockerfile.mcp`](../Dockerfile.mcp) | Playwright-based MCP image |
+| [`docker-compose.yml`](../docker-compose.yml) | `web` → `mermaid-diagram-web`, `mcp` → `mermaid-diagram-mcp` |
 | [`.cursor/mcp.json`](../.cursor/mcp.json) | Cursor config for this repo |
 | [`export_options.json`](../export_options.json) | Shared defaults (themes, DPI) |

@@ -143,6 +143,19 @@ docker compose up --build
 
 Open `http://localhost:8080`. After pulling or changing code, rebuild with `--build` and hard-refresh the browser (Cmd+Shift+R) so you get the latest assets.
 
+### Compose services
+
+| Service | Container name | Purpose |
+|---------|----------------|---------|
+| `web` | `mermaid-diagram-web` | nginx serving the built web app on port 8080 |
+| `mcp` | `mermaid-diagram-mcp` | MCP stdio server (profile `mcp` only; not started by default) |
+
+Check running containers:
+
+```bash
+docker ps --filter name=mermaid-diagram
+```
+
 Override the host port:
 
 ```bash

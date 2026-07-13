@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    container_name: mermaid-diagram
+    container_name: mermaid-diagram-web
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped
@@ -10,6 +10,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.mcp
+    container_name: mermaid-diagram-mcp
     stdin_open: true
     tty: false
     profiles: ["mcp"]
