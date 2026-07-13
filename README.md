@@ -12,6 +12,7 @@ A split-pane Mermaid editor with live preview, browser export (PNG/SVG), a Pytho
 - **History** panel: create new diagram sessions, switch between previous sessions, rename/delete
 - Persist sessions in `localStorage` (web/Docker)
 - CLI for headless batch rendering and file-based session history
+- **MCP server** for AI assistants (Cursor/Claude) — render diagrams via tool call
 - Docker image for serving the built web app with nginx
 
 ## Prerequisites
@@ -114,6 +115,55 @@ Close the browser window to exit preview mode.
 | `history new [--title]` | Create a session from the default sample |
 | `history delete <id>` | Remove a saved session |
 
+## MCP Server
+
+Expose Mermaid rendering as an MCP tool for Cursor, Claude, and other MCP clients. The tool returns inline PNG/SVG content and can optionally write to disk.
+
+| Mode | Entry point | When to use |
+|------|-------------|-------------|
+| **uv (local)** | `uv run mermaid-diagram-mcp` | Dev machines with uv + Playwright |
+| **Docker** | `docker compose --profile mcp run --rm -T mcp` | Isolated server with bundled Chromium |
+
+### Prerequisites
+
+**uv mode:**
+
+```bash
+uv sync
+uv run playwright install chromium
+```
+
+**Docker mode:**
+
+```bash
+docker compose --profile mcp build mcp
+```
+
+### Cursor setup
+
+The repo includes [`.cursor/mcp.json`](.cursor/mcp.json) with both server entries. Enable one in Cursor MCP settings:
+
+- `mermaid-diagram` — local uv server
+- `mermaid-diagram-docker` — Docker compose server
+
+### Tool: `render_mermaid_diagram`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `code` | string | required | Mermaid source |
+| `format` | `png` \| `svg` | `png` | Output format |
+| `background` | string | `transparent` | `transparent`, `white`, or CSS color |
+| `dpi` | int | `96` | PNG density base |
+| `scale` | float | `1.0` | Extra PNG scale multiplier |
+| `theme` | string | `default` | `default`, `dark`, `forest`, `neutral` |
+| `output_path` | string | — | Optional file path to save output |
+
+When using Docker, set `output_path` under the mounted volume (e.g. `/output/diagram.png`). The compose file maps `./output` on the host to `/output` in the container.
+
+Example prompt in Cursor:
+
+> Use the mermaid-diagram MCP tool to render this flowchart as a 300 DPI PNG with white background.
+
 ## Docker serve
 
 Run the production build without installing Node locally:
@@ -148,9 +198,11 @@ mermaid_diagram/
 ├── export_options.json
 ├── pyproject.toml
 ├── Dockerfile
+├── Dockerfile.mcp
 ├── docker-compose.yml
+├── .cursor/mcp.json
 ├── examples/
-├── src/mermaid_diagram/   # Python CLI
+├── src/mermaid_diagram/   # Python CLI + MCP server
 └── web/                   # React + Vite app
 ```
 
@@ -182,23 +234,27 @@ uv run pytest tests/ -v
 Run each mode separately:
 
 ```bash
-uv run pytest tests/ -m cli -v          # CLI render/preview validation
+uv run pytest tests/ -m cli -v          # CLI + MCP (uv) render validation
 uv run pytest tests/ -m web_local -v    # E2E against locally served web/dist
 uv run pytest tests/ -m web_docker -v   # E2E against docker compose (requires Docker)
+uv run pytest tests/test_mcp.py -v      # MCP tool tests only
+uv run pytest tests/ -m mcp_docker -v   # MCP Docker container tests
 ```
 
 | Suite | Marker | What it covers |
 |-------|--------|----------------|
-| CLI | `cli` | PNG/SVG render, themes, backgrounds, DPI, scale, error handling |
+| CLI | `cli` | PNG/SVG render, themes, backgrounds, DPI, scale, error handling, MCP tool (uv) |
 | Local web | `web_local` | Editor, preview, upload, zoom, background, export dialog |
 | Container | `web_docker` | `docker compose up --build` + same E2E on `localhost:8080` |
+| MCP (Docker) | `mcp_docker` | MCP image build, container render, output volume |
 
 ## CI
 
-GitHub Actions runs three parallel jobs on every pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+GitHub Actions runs four parallel jobs on every pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
-- **CLI tests** — `pytest -m cli`
+- **CLI tests** — `pytest -m cli` (includes MCP uv tests)
 - **Local web tests** — `pytest -m web_local`
 - **Container web tests** — `pytest -m web_docker`
+- **MCP Docker tests** — `pytest -m mcp_docker`
 
 When all jobs pass, a comment is posted on the pull request summarizing the results. Failed runs do not post a success comment.

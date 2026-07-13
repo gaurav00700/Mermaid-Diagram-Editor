@@ -57,6 +57,68 @@ def png_dimensions(path: Path) -> tuple[int, int]:
     return width, height
 
 
+def png_bytes_dimensions(data: bytes) -> tuple[int, int]:
+    if len(data) < 24:
+        raise ValueError("Invalid PNG data")
+    width = int.from_bytes(data[16:20], "big")
+    height = int.from_bytes(data[20:24], "big")
+    return width, height
+
+
+def invoke_render_mermaid_diagram(**kwargs):
+    import asyncio
+
+    from mermaid_diagram.mcp_server import render_mermaid_diagram
+
+    return asyncio.run(render_mermaid_diagram.fn(**kwargs))
+
+
+def run_mcp_docker(*cmd_args: str) -> subprocess.CompletedProcess[str]:
+    cmd = compose_cmd()
+    if cmd is None:
+        raise RuntimeError("Docker Compose is not available")
+    return subprocess.run(
+        [
+            *cmd,
+            "--profile",
+            "mcp",
+            "run",
+            "--rm",
+            "-T",
+            "--entrypoint",
+            "",
+            "mcp",
+            *cmd_args,
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+_mcp_image_built = False
+
+
+def ensure_mcp_image_built() -> None:
+    global _mcp_image_built
+    if _mcp_image_built:
+        return
+    cmd = compose_cmd()
+    if cmd is None:
+        pytest.skip("Docker Compose is not available")
+    build = subprocess.run(
+        [*cmd, "--profile", "mcp", "build", "mcp"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if build.returncode != 0:
+        pytest.skip(f"MCP Docker image build failed: {build.stderr}")
+    _mcp_image_built = True
+
+
 def ensure_web_build() -> None:
     if DIST.exists() and (DIST / "index.html").exists():
         return

@@ -17,6 +17,7 @@ web/dist/
 diagram.png
 diagram.svg
 /out/
+/output/
 /tmp/
 
 # Environment and secrets

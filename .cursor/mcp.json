@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "mermaid-diagram": {
+      "command": "uv",
+      "args": ["run", "mermaid-diagram-mcp"],
+      "cwd": "${workspaceFolder}"
+    },
+    "mermaid-diagram-docker": {
+      "command": "docker",
+      "args": [
+        "compose",
+        "--profile",
+        "mcp",
+        "run",
+        "--rm",
+        "-T",
+        "mcp"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

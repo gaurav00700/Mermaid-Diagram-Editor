@@ -5,3 +5,13 @@ services:
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped
+
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    stdin_open: true
+    tty: false
+    profiles: ["mcp"]
+    volumes:
+      - ${MERMAID_OUTPUT_DIR:-./output}:/output

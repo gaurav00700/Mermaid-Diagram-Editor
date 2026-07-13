@@ -69,17 +69,17 @@ def _build_page_html(code: str, background: str, theme: str) -> str:
     )
 
 
-def render_diagram(
+def render_diagram_result(
     code: str,
-    output: Path,
     *,
-    fmt: str | None = None,
+    fmt: str = "png",
     dpi: int = 96,
     background: str = "transparent",
     theme: str = "default",
     scale: float = 1.0,
-) -> None:
-    output_format = _infer_format(output, fmt)
+) -> bytes | str:
+    """Render Mermaid source to PNG bytes or an SVG string."""
+    output_format = fmt.lower()
     if output_format not in {"png", "svg"}:
         raise ValueError(f"Unsupported format: {output_format}")
 
@@ -97,15 +97,46 @@ def render_diagram(
         if output_format == "svg":
             if background not in {"transparent", ""}:
                 svg = inject_svg_background(svg, background_css(background))
-            output.write_text(svg, encoding="utf-8")
+            result: bytes | str = svg
         else:
             container = page.locator("#container")
             container.wait_for(state="visible")
-            output.parent.mkdir(parents=True, exist_ok=True)
-            container.screenshot(path=str(output), type="png", omit_background=background == "transparent")
+            result = container.screenshot(type="png", omit_background=background == "transparent")
 
         context.close()
         browser.close()
+
+    return result
+
+
+def render_diagram(
+    code: str,
+    output: Path,
+    *,
+    fmt: str | None = None,
+    dpi: int = 96,
+    background: str = "transparent",
+    theme: str = "default",
+    scale: float = 1.0,
+) -> None:
+    output_format = _infer_format(output, fmt)
+    result = render_diagram_result(
+        code,
+        fmt=output_format,
+        dpi=dpi,
+        background=background,
+        theme=theme,
+        scale=scale,
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if output_format == "svg":
+        if not isinstance(result, str):
+            raise TypeError("Expected SVG string from render_diagram_result")
+        output.write_text(result, encoding="utf-8")
+    else:
+        if not isinstance(result, bytes):
+            raise TypeError("Expected PNG bytes from render_diagram_result")
+        output.write_bytes(result)
 
 
 def preview_diagram(

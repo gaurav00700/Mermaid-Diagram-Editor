@@ -4,22 +4,24 @@ Guidance for AI coding agents working on the **Mermaid Diagram Editor** reposito
 
 ## Project overview
 
-Full-stack Mermaid diagram tool with three deployment modes that must stay in sync:
+Full-stack Mermaid diagram tool with deployment modes that must stay in sync:
 
 | Mode | Entry point | Purpose |
 |------|-------------|---------|
 | **Web (dev)** | `web/` → Vite dev server | Local React app with Monaco editor + live preview |
 | **Web (container)** | `Dockerfile` + nginx | Production static build served on port 8080 |
 | **CLI** | `src/mermaid_diagram/` | Headless PNG/SVG render and browser preview via Playwright |
+| **MCP (uv)** | `uv run mermaid-diagram-mcp` | stdio MCP server for AI tool calls |
+| **MCP (Docker)** | `docker compose --profile mcp run --rm -T mcp` | Containerized MCP, no local Playwright |
 
-Shared defaults (themes, DPI, backgrounds) live in [`export_options.json`](export_options.json) and are consumed by both the web app and Python CLI.
+Shared defaults (themes, DPI, backgrounds) live in [`export_options.json`](export_options.json) and are consumed by the web app, Python CLI, and MCP server.
 
 ## Repository layout
 
 ```
 export_options.json     # Shared themes/DPI/background defaults
 pyproject.toml          # Python package + pytest config (uv)
-src/mermaid_diagram/    # CLI: cli.py, render.py, background.py, history.py, options.py
+src/mermaid_diagram/    # CLI + MCP: cli.py, render.py, mcp_server.py, background.py, history.py, options.py
 web/                    # React 19 + Vite + TypeScript frontend
   src/
     App.tsx             # Shell: editor, preview, export, history sessions
@@ -27,10 +29,11 @@ web/                    # React 19 + Vite + TypeScript frontend
     hooks/useMermaid.ts # Mermaid render + bindFunctions for interactivity
     lib/                # exportDiagram, background, history, downloadSource, exportOptions, monacoSetup
     components/         # EditorPane, PreviewPane, HistoryPanel, Toolbar, ExportDialog, …
-tests/                  # pytest + Playwright (cli, web_local, web_docker)
+tests/                  # pytest + Playwright (cli, web_local, web_docker, mcp_docker)
 examples/               # sample.mmd, invalid.mmd
 .github/workflows/ci.yml
-Dockerfile, docker-compose.yml, nginx.conf
+Dockerfile, Dockerfile.mcp, docker-compose.yml, nginx.conf
+.cursor/mcp.json        # Cursor MCP config (uv + Docker entries)
 ```
 
 ## Commands agents should use
@@ -48,7 +51,9 @@ cd web && npm ci
 ```bash
 cd web && npm run dev          # Vite dev server (~5173)
 uv run mermaid-diagram render -i examples/sample.mmd -o out.png
+uv run mermaid-diagram-mcp     # MCP server (stdio)
 docker compose up --build      # Container on :8080
+docker compose --profile mcp build mcp   # MCP Docker image
 ```
 
 ### Build & test (run before finishing web/CLI changes)
@@ -59,9 +64,10 @@ uv run pytest tests/ -v
 uv run pytest tests/ -m cli -v
 uv run pytest tests/ -m web_local -v
 uv run pytest tests/ -m web_docker -v   # requires Docker
+uv run pytest tests/ -m mcp_docker -v   # MCP Docker container tests
 ```
 
-CI runs the three marked suites in parallel on every pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+CI runs four marked suites in parallel on every pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Architecture notes
 
@@ -84,6 +90,7 @@ CI runs the three marked suites in parallel on every pull request (see [`.github
 ### CLI rendering
 
 - [`render.py`](src/mermaid_diagram/render.py) loads Mermaid from jsDelivr CDN inside Playwright, renders to PNG (screenshot) or SVG (with optional background rect).
+- `render_diagram_result()` returns in-memory PNG bytes or SVG string; used by MCP server.
 - `preview` command opens a headed browser; CI only tests validation paths, not interactive preview.
 - [`history.py`](src/mermaid_diagram/history.py) stores sessions in `~/.local/share/mermaid-diagram/history.json` (override with `MERMAID_DIAGRAM_HISTORY_FILE` in tests).
 - `source export` and `history export` write `.mmd` files (parity with web **Download**).
@@ -95,6 +102,13 @@ CI runs the three marked suites in parallel on every pull request (see [`.github
 - [`useHistory`](web/src/hooks/useHistory.ts) drives active session; switching remounts Monaco via `editorKey`.
 - **Download** (toolbar) saves source via [`downloadSource.ts`](web/src/lib/downloadSource.ts); **Export** opens PNG/SVG dialog.
 
+### MCP server
+
+- [`mcp_server.py`](src/mermaid_diagram/mcp_server.py) exposes `render_mermaid_diagram` via FastMCP stdio transport.
+- Tool returns inline PNG (`Image`) or SVG text plus optional `output_path` file write.
+- Docker MCP uses [`Dockerfile.mcp`](Dockerfile.mcp) (Playwright base image); compose profile `mcp` with `./output` → `/output` volume.
+- Cursor config in [`.cursor/mcp.json`](.cursor/mcp.json) — uv and Docker entries.
+
 ## Shared config contract
 
 When adding themes, DPI presets, or background defaults:
@@ -103,12 +117,13 @@ When adding themes, DPI presets, or background defaults:
 2. Web types flow from JSON via [`web/src/lib/exportOptions.ts`](web/src/lib/exportOptions.ts)
 3. Python reads via [`src/mermaid_diagram/options.py`](src/mermaid_diagram/options.py)
 4. Extend CLI theme validation and export/preview UI as needed
-5. Add/adjust tests in `tests/test_cli.py` and web E2E helpers in `tests/conftest.py`
+5. Add/adjust tests in `tests/test_cli.py`, `tests/test_mcp.py`, and web E2E helpers in `tests/conftest.py`
 
 ## Testing conventions
 
-- **Fixtures & helpers**: [`tests/conftest.py`](tests/conftest.py) — `run_cli`, `compose_cmd`, `local_web_server`, `docker_web_server`, shared Playwright assertions.
-- **Markers**: `cli`, `web_local`, `web_docker` (registered in `pyproject.toml`).
+- **Fixtures & helpers**: [`tests/conftest.py`](tests/conftest.py) — `run_cli`, `compose_cmd`, `invoke_render_mermaid_diagram`, `run_mcp_docker`, `ensure_mcp_image_built`, `local_web_server`, `docker_web_server`, shared Playwright assertions.
+- **Markers**: `cli`, `web_local`, `web_docker`, `mcp_docker` (registered in `pyproject.toml`).
+- **MCP/CLI parity**: MCP export options should stay aligned with CLI — mirror coverage in `tests/test_mcp.py`.
 - **Monaco E2E**: use `_set_monaco_content()` in conftest — clicks `.monaco-editor`, **`ControlOrMeta+A`** (not `Meta+A`; Linux CI uses Ctrl), then types. Never click hidden Monaco textareas (overlay intercepts).
 - **Docker**: prefer `docker compose` with fallback to `docker-compose` via `compose_cmd()`.
 - **New web UI features**: add assertions to conftest helpers and cover in both `test_web_local.py` and `test_web_docker.py` when behavior should match in container.
@@ -144,10 +159,11 @@ When adding themes, DPI presets, or background defaults:
 | `docker-compose` missing on CI | Use `compose_cmd()` helper |
 | Playwright select-all fails on Linux | `ControlOrMeta+A`, not `Meta+A` |
 | Stale nginx `index.html` cache | `nginx.conf` no-cache for `index.html`; rebuild image |
+| MCP Docker browser mismatch | Pin `Dockerfile.mcp` base tag to match `playwright` version in `uv.lock` |
 
 ## CI expectations
 
-Pull requests trigger three jobs (`cli`, `web-local`, `web-docker`). All must pass. On success, a bot comment is posted on the PR (no secrets required).
+Pull requests trigger four jobs (`cli`, `web-local`, `web-docker`, `mcp-docker`). All must pass. On success, a bot comment is posted on the PR (no secrets required).
 
 When changing tests or workflow, verify locally with the same pytest markers CI uses.
 

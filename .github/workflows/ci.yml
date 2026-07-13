@@ -97,10 +97,26 @@ jobs:
       - name: Run Docker web E2E tests
         run: uv run pytest tests/ -m web_docker -v
 
+  mcp-docker:
+    name: MCP Docker tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: uv sync --all-groups
+
+      - name: Run MCP Docker tests
+        run: uv run pytest tests/ -m mcp_docker -v
+
   notify-success:
     name: Notify PR success
     runs-on: ubuntu-latest
-    needs: [cli, web-local, web-docker]
+    needs: [cli, web-local, web-docker, mcp-docker]
     if: github.event_name == 'pull_request' && success()
     steps:
       - uses: peter-evans/create-or-update-comment@v4
@@ -110,6 +126,7 @@ jobs:
           body: |
             All tests passed on commit ${{ github.sha }}.
 
-            **CLI** — render PNG/SVG, themes, backgrounds, DPI, scale, error handling
+            **CLI** — render PNG/SVG, themes, backgrounds, DPI, scale, error handling, MCP tool (uv)
             **Local web** — editor, preview, upload, zoom, background, export dialog
             **Container web** — docker compose build + same E2E against localhost:8080
+            **MCP Docker** — MCP image build, container render, output volume
