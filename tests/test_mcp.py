@@ -17,7 +17,11 @@ from conftest import (
     run_cli,
 )
 from mermaid_diagram.mcp_server import _resolve_output_path
-from mermaid_diagram.render import _ensure_playwright_chromium, render_diagram_result
+from mermaid_diagram.render import (
+    _chromium_launch_kwargs,
+    _ensure_playwright_chromium,
+    render_diagram_result,
+)
 
 pytestmark = pytest.mark.cli
 
@@ -30,6 +34,16 @@ flowchart TB
   SCOPE["1. List-lectures Lambda<br/>is_live=1 live set"]
   SCHED --> SCOPE
 """
+
+
+def test_chromium_launch_kwargs_adds_docker_flags_in_container(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MERMAID_CHROMIUM_NO_SANDBOX", "1")
+    kwargs = _chromium_launch_kwargs(headless=True)
+    assert kwargs["headless"] is True
+    assert "--no-sandbox" in kwargs["args"]
+    assert "--disable-dev-shm-usage" in kwargs["args"]
 
 
 def test_ensure_playwright_chromium_skips_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:

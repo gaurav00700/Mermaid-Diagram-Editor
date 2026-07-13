@@ -13,6 +13,27 @@ from mermaid_diagram.background import background_css, inject_svg_background
 MERMAID_VERSION = "11.15.0"
 MERMAID_CDN = f"https://cdn.jsdelivr.net/npm/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js"
 _playwright_ready = False
+_CHROMIUM_DOCKER_ARGS = (
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+)
+
+
+def _running_in_container() -> bool:
+    return Path("/.dockerenv").is_file() or os.environ.get("MERMAID_CHROMIUM_NO_SANDBOX") == "1"
+
+
+def _chromium_launch_kwargs(*, headless: bool) -> dict[str, object]:
+    kwargs: dict[str, object] = {"headless": headless}
+    if _running_in_container():
+        kwargs["args"] = list(_CHROMIUM_DOCKER_ARGS)
+    return kwargs
+
+
+def _launch_chromium(playwright: object, *, headless: bool = True):
+    launch = getattr(getattr(playwright, "chromium"), "launch")
+    return launch(**_chromium_launch_kwargs(headless=headless))
 
 RENDER_PAGE = """<!DOCTYPE html>
 <html>
@@ -81,7 +102,7 @@ def _ensure_playwright_chromium() -> None:
 
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True)
+            browser = _launch_chromium(playwright)
             browser.close()
     except Exception:
         subprocess.run(
@@ -111,7 +132,7 @@ def render_diagram_result(
     device_scale = (dpi / 96.0) * scale
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = _launch_chromium(playwright)
         context = browser.new_context(device_scale_factor=device_scale)
         page = context.new_page()
 
@@ -172,7 +193,7 @@ def preview_diagram(
     page_html = _build_page_html(code, background, theme)
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=False)
+        browser = _launch_chromium(playwright, headless=False)
         page = browser.new_page(viewport={"width": 1200, "height": 800})
         page.set_content(page_html, wait_until="networkidle")
         page.evaluate("() => window.__renderDiagram()")

@@ -19,6 +19,8 @@ services:
       MCP_HOST: 0.0.0.0
       MCP_PORT: "8000"
       MERMAID_WORKSPACE_ROOT: /workspace
+      MERMAID_SKIP_PLAYWRIGHT_INSTALL: "1"
+    shm_size: "1gb"
     volumes:
       - ${MERMAID_OUTPUT_DIR:-./output}:/output
       - ${MERMAID_WORKSPACE:-./output}:/workspace
