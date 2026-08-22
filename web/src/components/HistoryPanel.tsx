@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { HistorySession } from '../lib/history'
+import {
+  ClockIcon,
+  CloseIcon,
+  DiagramIcon,
+  EditIcon,
+  HistoryIcon,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+} from './Icons'
 
 interface HistoryPanelProps {
   open: boolean
@@ -55,36 +65,27 @@ export function HistoryPanel({
   return (
     <aside className="history-panel" aria-label="Diagram history">
       <div className="history-panel-header">
-        <h2>History</h2>
+        <h2>
+          <HistoryIcon />
+          History
+        </h2>
         <button type="button" className="icon-button" onClick={onClose} aria-label="Close history">
-          ×
+          <CloseIcon />
         </button>
       </div>
 
       <div className="history-panel-actions">
-        <button type="button" onClick={onNewDiagram}>
+        <button type="button" className="button-with-icon" onClick={onNewDiagram}>
+          <PlusIcon />
           New diagram
         </button>
       </div>
 
-      {active && (
-        <label className="history-rename">
-          Session title
-          <input
-            type="text"
-            value={titleDraft}
-            onChange={(event) => setTitleDraft(event.target.value)}
-            onBlur={() => {
-              if (titleDraft.trim() && titleDraft !== active.title) {
-                onRenameSession(titleDraft.trim())
-              }
-            }}
-          />
-        </label>
-      )}
-
       <label className="history-search">
-        Search
+        <span className="history-field-label">
+          <SearchIcon />
+          Search
+        </span>
         <input
           type="search"
           aria-label="Search history"
@@ -106,30 +107,58 @@ export function HistoryPanel({
         )}
       </label>
 
-      <ul className="history-session-list">
-        {visibleSessions.map((session) => (
-          <li key={session.id}>
-            <button
-              type="button"
-              className={`history-session-item${session.id === activeSessionId ? ' active' : ''}`}
-              onClick={() => onSelectSession(session.id)}
-            >
-              <span className="history-session-title">{session.title}</span>
-              <span className="history-session-meta">{formatWhen(session.updatedAt)}</span>
-            </button>
-            {sessions.length > 1 && (
+      {active && (
+        <label className="history-rename">
+          <span className="history-field-label">
+            <EditIcon />
+            Session title
+          </span>
+          <input
+            type="text"
+            value={titleDraft}
+            onChange={(event) => setTitleDraft(event.target.value)}
+            onBlur={() => {
+              if (titleDraft.trim() && titleDraft !== active.title) {
+                onRenameSession(titleDraft.trim())
+              }
+            }}
+          />
+        </label>
+      )}
+
+      <div className="history-session-section">
+        <ul className="history-session-list">
+          {visibleSessions.map((session) => (
+            <li key={session.id}>
               <button
                 type="button"
-                className="secondary history-delete-button"
-                aria-label={`Delete ${session.title}`}
-                onClick={() => onDeleteSession(session.id)}
+                className={`history-session-item${session.id === activeSessionId ? ' active' : ''}`}
+                onClick={() => onSelectSession(session.id)}
               >
-                Delete
+                <span className="history-session-title-row">
+                  <DiagramIcon />
+                  <span className="history-session-title">{session.title}</span>
+                </span>
+                <span className="history-session-meta">
+                  <ClockIcon />
+                  {formatWhen(session.updatedAt)}
+                </span>
               </button>
-            )}
-          </li>
-        ))}
-      </ul>
+              {sessions.length > 1 && (
+                <button
+                  type="button"
+                  className="secondary history-delete-button button-with-icon"
+                  aria-label={`Delete ${session.title}`}
+                  onClick={() => onDeleteSession(session.id)}
+                >
+                  <TrashIcon />
+                  Delete
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </aside>
   )
 }

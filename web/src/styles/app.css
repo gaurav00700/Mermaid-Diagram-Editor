@@ -96,6 +96,34 @@ button.secondary:hover {
 .history-panel-header h2 {
   margin: 0;
   font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.history-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.history-session-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.history-session-title-row .ui-icon {
+  margin-top: 0.1rem;
+  color: var(--accent);
+}
+
+.history-session-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .history-panel-actions {
@@ -131,6 +159,14 @@ button.secondary:hover {
 .history-search-meta {
   color: var(--muted);
   font-size: 0.75rem;
+}
+
+.history-session-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .history-session-list {
@@ -174,15 +210,23 @@ button.secondary:hover {
   font-size: 0.9rem;
 }
 
-.history-session-meta {
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
 .history-delete-button {
   align-self: flex-end;
   padding: 0.3rem 0.55rem;
   font-size: 0.8rem;
+}
+
+.ui-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  display: block;
+}
+
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .toolbar {
@@ -449,6 +493,14 @@ button.secondary:hover {
   font-size: 1.5rem;
   line-height: 1;
   padding: 0.25rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button .ui-icon {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .dialog-body {

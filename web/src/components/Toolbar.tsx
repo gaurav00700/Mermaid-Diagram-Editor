@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { HistoryIcon } from './Icons'
 
 interface ToolbarProps {
   onUpload: (content: string) => void
@@ -52,7 +53,8 @@ export function Toolbar({
           hidden
           onChange={handleFileChange}
         />
-        <button type="button" className="secondary" onClick={onToggleHistory}>
+        <button type="button" className="secondary button-with-icon" onClick={onToggleHistory}>
+          <HistoryIcon />
           History
         </button>
         <button type="button" onClick={() => fileInputRef.current?.click()}>
