@@ -11,6 +11,7 @@ from conftest import (
     assert_download_source_triggers_file,
     assert_export_dialog_opens,
     assert_history_panel_opens,
+    assert_history_search_filters,
     assert_homepage_loads,
     assert_live_edit_updates_preview,
     assert_monaco_editor_loads,
@@ -79,6 +80,10 @@ def test_export_dialog_opens(page: Page, local_web_server: str) -> None:
 
 def test_history_panel_opens(page: Page, local_web_server: str) -> None:
     assert_history_panel_opens(page, local_web_server)
+
+
+def test_history_search_filters(page: Page, local_web_server: str) -> None:
+    assert_history_search_filters(page, local_web_server)
 
 
 def test_new_diagram_creates_session(page: Page, local_web_server: str) -> None:

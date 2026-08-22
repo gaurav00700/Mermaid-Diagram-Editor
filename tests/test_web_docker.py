@@ -12,6 +12,7 @@ from conftest import (
     assert_download_source_triggers_file,
     assert_export_dialog_opens,
     assert_history_panel_opens,
+    assert_history_search_filters,
     assert_homepage_loads,
     assert_live_edit_updates_preview,
     assert_preview_background_white,
@@ -85,6 +86,10 @@ def test_export_dialog_opens(page: Page, docker_web_server: str) -> None:
 
 def test_history_panel_opens(page: Page, docker_web_server: str) -> None:
     assert_history_panel_opens(page, docker_web_server)
+
+
+def test_history_search_filters(page: Page, docker_web_server: str) -> None:
+    assert_history_search_filters(page, docker_web_server)
 
 
 def test_download_source_triggers_file(page: Page, docker_web_server: str) -> None:

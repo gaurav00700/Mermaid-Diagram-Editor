@@ -82,8 +82,8 @@ button.secondary:hover {
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.85rem;
-  overflow: auto;
   flex-shrink: 0;
+  min-height: 0;
 }
 
 .history-panel-header {
@@ -111,12 +111,26 @@ button.secondary:hover {
   font-size: 0.85rem;
 }
 
-.history-rename input {
+.history-rename input,
+.history-search input {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface-2);
   color: var(--text);
   padding: 0.4rem 0.55rem;
+}
+
+.history-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.history-search-meta {
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .history-session-list {
@@ -126,6 +140,9 @@ button.secondary:hover {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .history-session-list li {

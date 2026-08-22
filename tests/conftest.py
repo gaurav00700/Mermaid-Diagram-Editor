@@ -324,7 +324,29 @@ def assert_history_panel_opens(page: Page, base_url: str) -> None:
     page.goto(base_url, wait_until="networkidle")
     page.get_by_role("button", name="History", exact=True).click()
     page.locator(".history-panel").wait_for(state="visible")
+    page.get_by_role("searchbox", name="Search history").wait_for(state="visible")
     page.locator(".history-session-list").wait_for(state="visible")
+
+
+def assert_history_search_filters(page: Page, base_url: str) -> None:
+    page.goto(base_url, wait_until="networkidle")
+    page.get_by_role("button", name="History", exact=True).click()
+    initial_count = page.locator(".history-session-item").count()
+    page.get_by_role("button", name="New diagram").click()
+    _set_monaco_content(page, "graph LR\n    UniqueSearchNode[Found] --> Done[OK]\n")
+    page.locator(".preview-svg").get_by_text("Found", exact=True).wait_for(timeout=15000)
+    full_count = page.locator(".history-session-item").count()
+    assert full_count == initial_count + 1
+
+    search = page.get_by_role("searchbox", name="Search history")
+    search.fill("UniqueSearchNode")
+    page.wait_for_timeout(300)
+    assert page.locator(".history-session-item").count() == 1
+    assert page.locator(".history-session-title").filter(has_text="graph LR").is_visible()
+
+    search.fill("")
+    page.wait_for_timeout(300)
+    assert page.locator(".history-session-item").count() == full_count
 
 
 def assert_new_diagram_creates_session(page: Page, base_url: str) -> None:

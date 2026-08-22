@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { HistorySession } from '../lib/history'
 
 interface HistoryPanelProps {
@@ -29,10 +29,24 @@ export function HistoryPanel({
 }: HistoryPanelProps) {
   const active = sessions.find((session) => session.id === activeSessionId)
   const [titleDraft, setTitleDraft] = useState(active?.title ?? '')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     setTitleDraft(active?.title ?? '')
   }, [active?.id, active?.title])
+
+  const trimmedQuery = searchQuery.trim()
+  const visibleSessions = useMemo(() => {
+    const q = trimmedQuery.toLowerCase()
+    if (!q) {
+      return sessions
+    }
+    return sessions.filter(
+      (session) =>
+        session.title.toLowerCase().includes(q) ||
+        session.code.toLowerCase().includes(q),
+    )
+  }, [sessions, trimmedQuery])
 
   if (!open) {
     return null
@@ -69,8 +83,31 @@ export function HistoryPanel({
         </label>
       )}
 
+      <label className="history-search">
+        Search
+        <input
+          type="search"
+          aria-label="Search history"
+          placeholder="Search diagrams…"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setSearchQuery('')
+            }
+          }}
+        />
+        {trimmedQuery && (
+          <span className="history-search-meta">
+            {visibleSessions.length === 0
+              ? 'No diagrams match your search'
+              : `${visibleSessions.length} of ${sessions.length}`}
+          </span>
+        )}
+      </label>
+
       <ul className="history-session-list">
-        {sessions.map((session) => (
+        {visibleSessions.map((session) => (
           <li key={session.id}>
             <button
               type="button"
